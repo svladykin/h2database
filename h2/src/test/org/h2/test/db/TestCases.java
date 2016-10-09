@@ -40,6 +40,7 @@ public class TestCases extends TestBase {
 
     @Override
     public void test() throws Exception {
+        testAsColumn();
         testReferenceLaterTable();
         testAutoCommitInDatabaseURL();
         testReferenceableIndexUsage();
@@ -681,6 +682,66 @@ public class TestCases extends TestBase {
         }
         assertThrows(ErrorCode.INVALID_DATABASE_NAME_1, this).
             getConnection("cases/");
+    }
+
+    private void testAsColumn() throws SQLException {
+        deleteDb("cases");
+        Connection conn = getConnection("cases");
+        Statement stat = conn.createStatement();
+
+        stat.execute("create table t(a int, b int as a + 1)");
+        stat.execute("insert into t(a) values (1)");
+
+        ResultSet rs = stat.executeQuery("select a,b from t");
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertEquals(2, rs.getInt(2));
+        rs.close();
+
+        stat.execute("update t set a = 10");
+
+        rs = stat.executeQuery("select a,b from t");
+        assertTrue(rs.next());
+        assertEquals(10, rs.getInt(1));
+        assertEquals(11, rs.getInt(2));
+        rs.close();
+
+        // If we explicitly set value to a calculated column, 
+        // it should not be replaced with calculated value.
+        stat.execute("update t set a = 5, b = 0");
+
+        rs = stat.executeQuery("select a,b from t");
+        assertTrue(rs.next());
+        assertEquals(5, rs.getInt(1));
+        assertEquals(0, rs.getInt(2));
+        rs.close();
+
+        stat.execute("update t set a = 6");
+
+        rs = stat.executeQuery("select a,b from t");
+        assertTrue(rs.next());
+        assertEquals(6, rs.getInt(1));
+        assertEquals(7, rs.getInt(2));
+        rs.close();
+        
+        stat.execute("merge into t key(b) values(1,7)");
+
+        rs = stat.executeQuery("select a,b from t");
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertEquals(7, rs.getInt(2));
+        rs.close();
+        
+        stat.execute("merge into t key(a) values(1,DEFAULT)");
+        
+        rs = stat.executeQuery("select a,b from t");
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertEquals(2, rs.getInt(2));
+        rs.close();
+        
+        conn.close();
+        deleteDb("cases");
     }
 
     private void testReuseSpace() throws SQLException {

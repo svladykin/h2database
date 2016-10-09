@@ -72,7 +72,7 @@ public class Column {
     private String name;
     private int columnId;
     private boolean nullable = true;
-    private Expression defaultExpression;
+    private volatile Expression defaultExpression;
     private Expression checkConstraint;
     private String checkConstraintSQL;
     private String originalSQL;
@@ -160,21 +160,11 @@ public class Column {
         }
     }
 
-    boolean getComputed() {
-        return isComputed;
-    }
-
     /**
-     * Compute the value of this computed column.
-     *
-     * @param session the session
-     * @param row the row
-     * @return the value
+     * @return true if it is a computed column
      */
-    synchronized Value computeValue(Session session, Row row) {
-        computeTableFilter.setSession(session);
-        computeTableFilter.set(row);
-        return defaultExpression.getValue(session);
+    public boolean isComputed() {
+        return isComputed;
     }
 
     /**
@@ -258,27 +248,28 @@ public class Column {
         nullable = b;
     }
 
+    private synchronized Value evalDefaultExpression(Session session, Row row) {
+        computeTableFilter.set(row);
+        return defaultExpression.getValue(session);
+    }
+    
     /**
      * Validate the value, convert it if required, and update the sequence value
      * if required. If the value is null, the default value (NULL if no default
      * is set) is returned. Check constraints are validated as well.
      *
      * @param session the session
+     * @param the new row
      * @param value the value or null
      * @return the new or converted value
      */
-    public Value validateConvertUpdateSequence(Session session, Value value) {
-        // take a local copy of defaultExpression to avoid holding the lock
-        // while calling getValue
-        final Expression localDefaultExpression;
-        synchronized (this) {
-            localDefaultExpression = defaultExpression;
-        }
+    public Value validateConvertUpdateSequence(Session session, Row newRow) {
+        Value value = newRow.getValue(columnId);
         if (value == null) {
-            if (localDefaultExpression == null) {
+            if (defaultExpression == null) {
                 value = ValueNull.INSTANCE;
             } else {
-                value = localDefaultExpression.getValue(session).convertTo(type);
+                value = evalDefaultExpression(session, newRow).convertTo(type);
                 if (primaryKey) {
                     session.setLastIdentity(value);
                 }
@@ -287,7 +278,7 @@ public class Column {
         Mode mode = session.getDatabase().getMode();
         if (value == ValueNull.INSTANCE) {
             if (convertNullToDefault) {
-                value = localDefaultExpression.getValue(session).convertTo(type);
+                value = evalDefaultExpression(session, newRow).convertTo(type);
             }
             if (value == ValueNull.INSTANCE && !nullable) {
                 if (mode.convertInsertNullToZero) {

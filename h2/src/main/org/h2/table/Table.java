@@ -18,7 +18,6 @@ import org.h2.engine.DbObject;
 import org.h2.engine.Right;
 import org.h2.engine.Session;
 import org.h2.engine.UndoLogRecord;
-import org.h2.expression.Expression;
 import org.h2.expression.ExpressionVisitor;
 import org.h2.index.Index;
 import org.h2.index.IndexType;
@@ -774,14 +773,8 @@ public abstract class Table extends SchemaObjectBase {
     public void validateConvertUpdateSequence(Session session, Row row) {
         for (int i = 0; i < columns.length; i++) {
             Value value = row.getValue(i);
-            Column column = columns[i];
-            Value v2;
-            if (column.getComputed()) {
-                // force updating the value
-                value = null;
-                v2 = column.computeValue(session, row);
-            }
-            v2 = column.validateConvertUpdateSequence(session, value);
+            Column column = columns[i]; 
+            Value v2 = column.validateConvertUpdateSequence(session, row);
             if (v2 != value) {
                 row.setValue(i, v2);
             }
@@ -1163,17 +1156,12 @@ public abstract class Table extends SchemaObjectBase {
      * Get or generate a default value for the given column.
      *
      * @param session the session
+     * @param row the row
      * @param column the column
      * @return the value
      */
-    public Value getDefaultValue(Session session, Column column) {
-        Expression defaultExpr = column.getDefaultExpression();
-        Value v;
-        if (defaultExpr == null) {
-            v = column.validateConvertUpdateSequence(session, null);
-        } else {
-            v = defaultExpr.getValue(session);
-        }
+    public Value getDefaultValue(Session session, Row row, Column column) {
+        Value v = column.validateConvertUpdateSequence(session, row);
         return column.convert(v);
     }
 

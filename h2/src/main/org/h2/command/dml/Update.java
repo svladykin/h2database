@@ -109,15 +109,15 @@ public class Update extends Prepared {
                     Row oldRow = tableFilter.get();
                     Row newRow = table.getTemplateRow();
                     for (int i = 0; i < columnCount; i++) {
-                        Expression newExpr = expressionMap.get(columns[i]);
+                        Column column = columns[i];
+                        Expression newExpr = expressionMap.get(column);
                         Value newValue;
                         if (newExpr == null) {
-                            newValue = oldRow.getValue(i);
+                            // If it is a computed column, we keep null value to enforce calculation.
+                            newValue = column.isComputed() ? null : oldRow.getValue(i);
                         } else if (newExpr == ValueExpression.getDefault()) {
-                            Column column = table.getColumn(i);
-                            newValue = table.getDefaultValue(session, column);
+                            newValue = table.getDefaultValue(session, newRow, column);
                         } else {
-                            Column column = table.getColumn(i);
                             newValue = column.convert(newExpr.getValue(session));
                         }
                         newRow.setValue(i, newValue);
