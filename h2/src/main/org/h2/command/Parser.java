@@ -32,6 +32,7 @@ import org.h2.command.ddl.AlterView;
 import org.h2.command.ddl.Analyze;
 import org.h2.command.ddl.CreateAggregate;
 import org.h2.command.ddl.CreateConstant;
+import org.h2.command.ddl.CreateCustomDataType;
 import org.h2.command.ddl.CreateFunctionAlias;
 import org.h2.command.ddl.CreateIndex;
 import org.h2.command.ddl.CreateLinkedTable;
@@ -86,6 +87,7 @@ import org.h2.command.dml.TransactionCommand;
 import org.h2.command.dml.Update;
 import org.h2.constraint.ConstraintReferential;
 import org.h2.engine.Constants;
+import org.h2.engine.CustomDataType;
 import org.h2.engine.Database;
 import org.h2.engine.DbObject;
 import org.h2.engine.FunctionAlias;
@@ -4130,6 +4132,7 @@ public class Parser {
             original = StringUtils.toUpperEnglish(original);
         }
         UserDataType userDataType = database.findUserDataType(original);
+        CustomDataType customDataType = database.findCustomDataType(original);
         if (userDataType != null) {
             templateColumn = userDataType.getColumn();
             dataType = DataType.getDataType(templateColumn.getType());
@@ -4138,6 +4141,8 @@ public class Parser {
             precision = templateColumn.getPrecision();
             displaySize = templateColumn.getDisplaySize();
             scale = templateColumn.getScale();
+        } else if (customDataType != null) {
+            dataType = DataType.getTypeByName("JAVA_OBJECT");
         } else {
             dataType = DataType.getTypeByName(original);
             if (dataType == null) {
@@ -4231,6 +4236,7 @@ public class Parser {
         }
         column.setComment(comment);
         column.setOriginalSQL(original);
+        column.setCustomType(customDataType != null ? customDataType.getCustomType() : null);
         return column;
     }
 
@@ -4267,6 +4273,9 @@ public class Parser {
             return parseCreateAggregate(force);
         } else if (readIf("LINKED")) {
             return parseCreateLinkedTable(false, false, force);
+        }
+        else if (readIf("CUSTOM")) {
+            return parseCreateCustomDataType();
         }
         // tables or linked tables
         boolean memory = false, cached = false;
@@ -4681,6 +4690,25 @@ public class Parser {
         col.rename(null);
         command.setColumn(col);
         command.setIfNotExists(ifNotExists);
+        return command;
+    }
+
+    private Prepared parseCreateCustomDataType() {
+        read("TYPE");
+        boolean ifNotExists = readIfNotExists();
+        CreateCustomDataType command = new CreateCustomDataType(session);
+        command.setTypeName(readUniqueIdentifier());
+        command.setIfNotExists(ifNotExists);
+        read("FOR");
+        read("CLASS");
+        command.setTypeClassName(readString());
+        if (readIf("WITH")) {
+            ArrayList<String> typeParams = New.arrayList();
+            do {
+                typeParams.add(readUniqueIdentifier());
+            } while (readIf(","));
+            command.setTypeParams(typeParams);
+        }
         return command;
     }
 

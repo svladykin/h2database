@@ -6,9 +6,11 @@
 package org.h2.table;
 
 import java.sql.ResultSetMetaData;
+import org.h2.api.CustomType;
 import org.h2.api.ErrorCode;
 import org.h2.command.Parser;
 import org.h2.engine.Constants;
+import org.h2.engine.CustomDataType;
 import org.h2.engine.Mode;
 import org.h2.engine.Session;
 import org.h2.expression.ConditionAndOr;
@@ -86,6 +88,7 @@ public class Column {
     private SingleColumnResolver resolver;
     private String comment;
     private boolean primaryKey;
+    private CustomType customType;
 
     public Column(String name, int type) {
         this(name, type, -1, -1, -1);
@@ -672,6 +675,14 @@ public class Column {
 
     public boolean isPrimaryKey() {
         return primaryKey;
+    }
+
+    public CustomType getCustomType() {
+        return customType;
+    }
+
+    public void setCustomType(CustomType customType) {
+        this.customType = customType;
     }
 
     @Override
