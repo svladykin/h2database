@@ -25,25 +25,25 @@ import org.h2.value.DataType;
  */
 public class CreateCustomDataType extends DefineCommand {
 
-    private String typeName;
-    private String typeClassName;
-    private ArrayList<String> typeParams;
+    private String name;
+    private String className;
+    private ArrayList<String> params;
     private boolean ifNotExists;
 
     public CreateCustomDataType(Session session) {
         super(session);
     }
 
-    public void setTypeName(String name) {
-        this.typeName = name;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void setTypeClassName(String typeClassName) {
-        this.typeClassName = typeClassName;
+    public void setClassName(String className) {
+        this.className = className;
     }
 
-    public void setTypeParams(ArrayList<String> typeParams) {
-        this.typeParams = typeParams;
+    public void setParams(ArrayList<String> params) {
+        this.params = params;
     }
 
     public void setIfNotExists(boolean ifNotExists) {
@@ -56,43 +56,43 @@ public class CreateCustomDataType extends DefineCommand {
         session.commit(true);
         Database db = session.getDatabase();
         session.getUser().checkAdmin();
-        if (db.findCustomDataType(typeName) != null) {
+        if (db.findCustomDataType(name) != null) {
             if (ifNotExists) {
                 return 0;
             }
             throw DbException.get(
                     ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
-                    typeName);
+                name);
         }
 
         // Check built-in types
-        DataType builtIn = DataType.getTypeByName(typeName);
+        DataType builtIn = DataType.getTypeByName(name);
         if (builtIn != null) {
             if (!builtIn.hidden) {
                 throw DbException.get(
                         ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
-                        typeName);
+                    name);
             }
             Table table = session.getDatabase().getFirstUserTable();
             if (table != null) {
                 throw DbException.get(
                         ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
-                        typeName + " (" + table.getSQL() + ")");
+                        name + " (" + table.getSQL() + ")");
             }
         }
 
         CustomType type;
 
         try {
-            type = (CustomType) JdbcUtils.loadUserClass(typeClassName).newInstance();
-            type.init(session.getDataHandler(), typeParams);
+            type = (CustomType) JdbcUtils.loadUserClass(className).newInstance();
+            type.init(session.getDataHandler(), params);
         } catch (Exception e) {
             throw DbException.convert(e);
         }
 
         int id = getObjectId();
 
-        CustomDataType customDataType = new CustomDataType(db, id, typeName, type, typeParams);
+        CustomDataType customDataType = new CustomDataType(db, id, name, type, params);
 
         db.addDatabaseObject(session, customDataType);
 
@@ -101,6 +101,6 @@ public class CreateCustomDataType extends DefineCommand {
 
     @Override
     public int getType() {
-        return CommandInterface.CREATE_CUSTOM_TYPE;
+        return CommandInterface.CREATE_VALUE_TYPE;
     }
 }

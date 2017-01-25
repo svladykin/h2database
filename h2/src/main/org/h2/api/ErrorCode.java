@@ -1939,10 +1939,10 @@ public class ErrorCode {
      * The error with code <code>90144</code> is thrown when
      * trying to register custom data type if an object with this name already exists.
      * Example:
-     * <pre>
-     * CREATE CUSTOM TYPE FOO FOR CLASS 'org.acme.Foo';
-     * CREATE CUSTOM TYPE BAR FOR CLASS 'org.acme.Bar';
-     * CREATE CUSTOM TYPE BAR FOR CLASS 'org.acme.Bar';
+     *+
+     * CREATE VALUE TYPE FOO FOR "org.acme.Foo";
+     * CREATE VALUE TYPE BAR FOR "org.acme.Bar";
+     * CREATE VALUE TYPE BAR FOR "org.acme.Bar";
      * </pre>
      */
     public static final int CUSTOM_DATA_TYPE_ALREADY_EXISTS_1 = 90144;

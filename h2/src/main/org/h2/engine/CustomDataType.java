@@ -19,10 +19,10 @@ package org.h2.engine;
 
 import java.util.ArrayList;
 import org.h2.api.CustomType;
+import org.h2.command.Parser;
 import org.h2.message.Trace;
 import org.h2.table.Table;
 import org.h2.util.StatementBuilder;
-import org.h2.util.StringUtils;
 
 public class CustomDataType extends DbObjectBase {
     private final CustomType type;
@@ -44,18 +44,17 @@ public class CustomDataType extends DbObjectBase {
 
     @Override
     public String getCreateSQL() {
-        StatementBuilder buff = new StatementBuilder("CREATE CUSTOM TYPE ")
-            .append(getName())
-            .append("\n    FOR CLASS '")
-            .append(type.getClass().getName())
-            .append('\'');
+        StatementBuilder buff = new StatementBuilder("CREATE VALUE TYPE ")
+            .append(getSQL())
+            .append("\n    FOR ")
+            .append(Parser.quoteIdentifier(getCustomType().getClass().getName()));
 
         if (typeParams != null && !typeParams.isEmpty()) {
             buff.append("\n    WITH ");
             buff.resetCount();
             for (String parameter : typeParams) {
                 buff.appendExceptFirst(", ");
-                buff.append(StringUtils.quoteIdentifier(parameter));
+                buff.append(Parser.quoteIdentifier(parameter));
             }
         }
 
@@ -68,7 +67,7 @@ public class CustomDataType extends DbObjectBase {
 
     @Override
     public String getDropSQL() {
-        return "DROP CUSTOM TYPE IF EXISTS " + getName();
+        return "DROP VALUE TYPE IF EXISTS " + getSQL();
     }
 
     @Override

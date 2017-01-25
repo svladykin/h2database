@@ -462,9 +462,9 @@ public interface CommandInterface {
     int EXPLAIN_ANALYZE = 86;
 
     /**
-     * The type of a CREATE CUSTOM TYPE statement.
+     * The type of a CREATE VALUE TYPE statement.
      */
-    int CREATE_CUSTOM_TYPE = 87;
+    int CREATE_VALUE_TYPE = 87;
 
     /**
      * Get command type.

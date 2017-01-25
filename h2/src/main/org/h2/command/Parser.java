@@ -4274,7 +4274,7 @@ public class Parser {
         } else if (readIf("LINKED")) {
             return parseCreateLinkedTable(false, false, force);
         }
-        else if (readIf("CUSTOM")) {
+        else if (readIf("VALUE")) {
             return parseCreateCustomDataType();
         }
         // tables or linked tables
@@ -4696,18 +4696,22 @@ public class Parser {
     private Prepared parseCreateCustomDataType() {
         read("TYPE");
         boolean ifNotExists = readIfNotExists();
+        String name = readUniqueIdentifier();
+        if (isKeyword(name)) {
+            throw DbException.get(ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
+                name);
+        }
         CreateCustomDataType command = new CreateCustomDataType(session);
-        command.setTypeName(readUniqueIdentifier());
+        command.setName(name);
         command.setIfNotExists(ifNotExists);
         read("FOR");
-        read("CLASS");
-        command.setTypeClassName(readString());
+        command.setClassName(readUniqueIdentifier());
         if (readIf("WITH")) {
             ArrayList<String> typeParams = New.arrayList();
             do {
                 typeParams.add(readUniqueIdentifier());
             } while (readIf(","));
-            command.setTypeParams(typeParams);
+            command.setParams(typeParams);
         }
         return command;
     }
