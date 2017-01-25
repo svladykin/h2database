@@ -13,7 +13,9 @@ import org.h2.engine.CustomDataType;
 import org.h2.engine.Database;
 import org.h2.engine.Session;
 import org.h2.message.DbException;
+import org.h2.table.Table;
 import org.h2.util.JdbcUtils;
+import org.h2.value.DataType;
 
 /**
  * This class represents the statement
@@ -59,8 +61,24 @@ public class CreateCustomDataType extends DefineCommand {
                 return 0;
             }
             throw DbException.get(
-                    ErrorCode.USER_DATA_TYPE_ALREADY_EXISTS_1,
+                    ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
                     typeName);
+        }
+
+        // Check built-in types
+        DataType builtIn = DataType.getTypeByName(typeName);
+        if (builtIn != null) {
+            if (!builtIn.hidden) {
+                throw DbException.get(
+                        ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
+                        typeName);
+            }
+            Table table = session.getDatabase().getFirstUserTable();
+            if (table != null) {
+                throw DbException.get(
+                        ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
+                        typeName + " (" + table.getSQL() + ")");
+            }
         }
 
         CustomType type;
@@ -85,5 +103,4 @@ public class CreateCustomDataType extends DefineCommand {
     public int getType() {
         return CommandInterface.CREATE_CUSTOM_TYPE;
     }
-
 }
