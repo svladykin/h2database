@@ -49,6 +49,7 @@ import org.h2.command.ddl.DeallocateProcedure;
 import org.h2.command.ddl.DefineCommand;
 import org.h2.command.ddl.DropAggregate;
 import org.h2.command.ddl.DropConstant;
+import org.h2.command.ddl.DropCustomDataType;
 import org.h2.command.ddl.DropDatabase;
 import org.h2.command.ddl.DropFunctionAlias;
 import org.h2.command.ddl.DropIndex;
@@ -1516,6 +1517,8 @@ public class Parser {
             return parseDropUserDataType();
         } else if (readIf("AGGREGATE")) {
             return parseDropAggregate();
+        } else if (readIf("VALUE")) {
+            return parseDropCustomDataType();
         }
         throw getSyntaxError();
     }
@@ -1523,6 +1526,16 @@ public class Parser {
     private DropUserDataType parseDropUserDataType() {
         boolean ifExists = readIfExists(false);
         DropUserDataType command = new DropUserDataType(session);
+        command.setTypeName(readUniqueIdentifier());
+        ifExists = readIfExists(ifExists);
+        command.setIfExists(ifExists);
+        return command;
+    }
+
+    private DropCustomDataType parseDropCustomDataType() {
+        read("TYPE");
+        boolean ifExists = readIfExists(false);
+        DropCustomDataType command = new DropCustomDataType(session);
         command.setTypeName(readUniqueIdentifier());
         ifExists = readIfExists(ifExists);
         command.setIfExists(ifExists);

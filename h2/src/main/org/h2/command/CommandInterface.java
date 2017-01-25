@@ -467,6 +467,11 @@ public interface CommandInterface {
     int CREATE_VALUE_TYPE = 87;
 
     /**
+     * The type of a DROP TYPE statement.
+     */
+    int DROP_VALUE_TYPE = 88;
+
+    /**
      * Get command type.
      *
      * @return one of the constants above

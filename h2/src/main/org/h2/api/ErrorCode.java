@@ -1947,6 +1947,16 @@ public class ErrorCode {
      */
     public static final int CUSTOM_DATA_TYPE_ALREADY_EXISTS_1 = 90144;
 
+    /**
+     * The error with code <code>90110</code> is thrown when
+     * trying to drop a custom type that doesn't exist.
+     * Example:
+     * <pre>
+     * DROP TYPE UNKNOWN;
+     * </pre>
+     */
+    public static final int CUSTOM_DATA_TYPE_NOT_FOUND_1 = 90110;
+
     // next are 90110, 90122
 
     private ErrorCode() {
