@@ -222,6 +222,11 @@ CREATE USER [ IF NOT EXISTS ] newUserName
 { PASSWORD string | SALT bytes HASH bytes } [ ADMIN ]
 ","
 Creates a new user."
+"Commands (DDL)","CREATE VALUE TYPE","
+CREATE VALUE TYPE [ IF NOT EXISTS ] newTypeName FOR className
+[ WITH typeParam [,...] ]
+","
+Creates new value type from Java class."
 "Commands (DDL)","CREATE VIEW","
 CREATE [ OR REPLACE ] [ FORCE ] VIEW [ IF NOT EXISTS ] newViewName
 [ ( columnName [,...] ) ] AS select
@@ -276,6 +281,10 @@ Drops an existing trigger."
 DROP USER [ IF EXISTS ] userName
 ","
 Drops a user."
+"Commands (DDL)","DROP VALUE TYPE","
+DROP VALUE TYPE [ IF EXISTS ] typeName
+","
+Drops an existing Java class based value type."
 "Commands (DDL)","DROP VIEW","
 DROP VIEW [ IF EXISTS ] viewName [ RESTRICT | CASCADE ]
 ","

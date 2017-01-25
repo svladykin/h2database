@@ -3196,6 +3196,9 @@ drop domain email;
 drop domain gmail;
 > ok
 
+CREATE VALUE TYPE person FOR "org.h2.samples.CustomTypes$PersonType" WITH param1,param2;
+> ok
+
 create force view address_view as select * from address;
 > ok
 

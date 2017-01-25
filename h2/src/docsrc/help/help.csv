@@ -720,6 +720,32 @@ This command commits an open transaction in this connection.
 CREATE USER GUEST PASSWORD 'abc'
 "
 
+"Commands (DDL)","CREATE VALUE TYPE","
+CREATE VALUE TYPE [ IF NOT EXISTS ] newTypeName FOR className
+[ WITH typeParam [,...] ]
+","
+Creates new value type with specified name from given Java class.
+
+Effective column data type for such types is ""JAVA_OBJECT"".
+
+Custom types are meant to extend capabilities of SQL and allow the user
+to introduce custom logic for construction of the objects. Say, one could
+create a custom type that would be capable of parsing given string literal
+to JSON and, by using some arbitrary logic, analyze that JSON and yield
+Java objects of any type and structure.
+
+All classes representing custom types must implement ""org.h2.api.CustomType""
+interface. Implementations of this interface effectively shall contain logic
+to build the objects needed by the user from SQL and nothing else - in other
+words, objects actually stored in database need not know anything
+neither about H2 nor its custom types.
+
+Please have a look at ""CustomTypes"" sample in H2 sources to get an example
+of how custom types may be used.
+","
+CREATE VALUE TYPE CUSTOM FOR ""org.acme.CustomType"" WITH ""customTypeParam""
+"
+
 "Commands (DDL)","CREATE VIEW","
 CREATE [ OR REPLACE ] [ FORCE ] VIEW [ IF NOT EXISTS ] newViewName
 [ ( columnName [,...] ) ] AS select
@@ -860,6 +886,17 @@ Admin rights are required to execute this command.
 This command commits an open transaction in this connection.
 ","
 DROP USER TOM
+"
+
+"Commands (DDL)","DROP VALUE TYPE","
+DROP VALUE TYPE [ IF EXISTS ] typeName
+","
+Drops an existing Java class based value type.
+
+Admin rights are required to execute this command.
+This command commits an open transaction in this connection.
+","
+DROP VALUE TYPE CUSTOM
 "
 
 "Commands (DDL)","DROP VIEW","
