@@ -3199,6 +3199,15 @@ drop domain gmail;
 CREATE VALUE TYPE person FOR "org.h2.samples.CustomTypes$PersonType" WITH param1,param2;
 > ok
 
+select CLASS_NAME, SQL from information_schema.custom_types;
+> CLASS_NAME                            SQL
+> ------------------------------------- ----------------------------------------------------------------------------------------
+> org.h2.samples.CustomTypes$PersonType CREATE VALUE TYPE PERSON FOR "org.h2.samples.CustomTypes$PersonType" WITH PARAM1, PARAM2
+> rows: 1
+
+drop VALUE TYPE person;
+> ok
+
 create force view address_view as select * from address;
 > ok
 

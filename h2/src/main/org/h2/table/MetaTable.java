@@ -23,6 +23,7 @@ import org.h2.constraint.ConstraintCheck;
 import org.h2.constraint.ConstraintReferential;
 import org.h2.constraint.ConstraintUnique;
 import org.h2.engine.Constants;
+import org.h2.engine.CustomDataType;
 import org.h2.engine.Database;
 import org.h2.engine.DbObject;
 import org.h2.engine.FunctionAlias;
@@ -108,7 +109,8 @@ public class MetaTable extends Table {
     private static final int LOCKS = 26;
     private static final int SESSION_STATE = 27;
     private static final int QUERY_STATISTICS = 28;
-    private static final int META_TABLE_TYPE_COUNT = QUERY_STATISTICS + 1;
+    private static final int CUSTOM_TYPES = 29;
+    private static final int META_TABLE_TYPE_COUNT = CUSTOM_TYPES + 1;
 
     private final int type;
     private final int indexColumn;
@@ -534,6 +536,14 @@ public class MetaTable extends Table {
                     "CUMULATIVE_ROW_COUNT LONG",
                     "AVERAGE_ROW_COUNT DOUBLE",
                     "STD_DEV_ROW_COUNT DOUBLE"
+            );
+            break;
+        }
+        case CUSTOM_TYPES: {
+            setObjectName("CUSTOM_TYPES");
+            cols = createColumns(
+                "CLASS_NAME",
+                "SQL"
             );
             break;
         }
@@ -1855,6 +1865,15 @@ public class MetaTable extends Table {
                             "" + entry.getRowCountStandardDeviation()
                     );
                 }
+            }
+            break;
+        }
+        case CUSTOM_TYPES: {
+            for (CustomDataType dt : database.getAllCustomDataTypes()) {
+                add(rows,
+                    dt.getCustomType().getClass().getName(),
+                    "" + dt.getCreateSQL()
+                );
             }
             break;
         }
