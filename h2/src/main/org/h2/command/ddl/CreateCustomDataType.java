@@ -14,7 +14,6 @@ import org.h2.engine.Database;
 import org.h2.engine.Session;
 import org.h2.message.DbException;
 import org.h2.util.JdbcUtils;
-import org.h2.util.Utils;
 
 /**
  * This class represents the statement
@@ -68,6 +67,7 @@ public class CreateCustomDataType extends DefineCommand {
 
         try {
             type = (CustomType) JdbcUtils.loadUserClass(typeClassName).newInstance();
+            type.init(session.getDataHandler(), typeParams);
         } catch (Exception e) {
             throw DbException.convert(e);
         }

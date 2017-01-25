@@ -1,5 +1,6 @@
 package org.h2.api;
 
+import org.h2.store.DataHandler;
 import org.h2.value.Value;
 
 import java.util.ArrayList;
@@ -10,9 +11,7 @@ import java.util.ArrayList;
  * @author apaschenko
  */
 public interface CustomType {
-    void setup(ArrayList<String> params);
+    void init(DataHandler dataHandler, ArrayList<String> params);
 
-    Value wrap(Value value);
-
-    Value compare(Value left, Value right);
+    Value convert(Value value);
 }

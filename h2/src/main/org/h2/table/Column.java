@@ -10,7 +10,6 @@ import org.h2.api.CustomType;
 import org.h2.api.ErrorCode;
 import org.h2.command.Parser;
 import org.h2.engine.Constants;
-import org.h2.engine.CustomDataType;
 import org.h2.engine.Mode;
 import org.h2.engine.Session;
 import org.h2.expression.ConditionAndOr;
@@ -149,7 +148,7 @@ public class Column {
      */
     public Value convert(Value v) {
         try {
-            return v.convertTo(type);
+            return customType != null ? customType.convert(v) : v.convertTo(type);
         } catch (DbException e) {
             if (e.getErrorCode() == ErrorCode.DATA_CONVERSION_ERROR_1) {
                 String target = (table == null ? "" : table.getName() + ": ") +

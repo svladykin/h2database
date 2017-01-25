@@ -6,11 +6,14 @@
 package org.h2.expression;
 
 import java.util.Arrays;
+
+import org.h2.api.CustomType;
 import org.h2.engine.Database;
 import org.h2.engine.Session;
 import org.h2.engine.SysProperties;
 import org.h2.index.IndexCondition;
 import org.h2.message.DbException;
+import org.h2.table.Column;
 import org.h2.table.ColumnResolver;
 import org.h2.table.TableFilter;
 import org.h2.util.New;
@@ -200,7 +203,7 @@ public class Comparison extends Condition {
                     // If not the column values will need to be promoted
                     // to constant type, but vise versa, then let's do this here once.
                     if (constType != resType)
-                        right = ValueExpression.get(r.convertTo(resType));
+                        right = ValueExpression.get(((ExpressionColumn) left).getColumn().convert(r));
                 } else if (right instanceof Parameter) {
                     ((Parameter) right).setColumn(
                             ((ExpressionColumn) left).getColumn());
