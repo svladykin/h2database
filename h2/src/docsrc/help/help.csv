@@ -738,7 +738,9 @@ All classes representing custom types must implement ""org.h2.api.CustomType""
 interface. Implementations of this interface effectively shall contain logic
 to build the objects needed by the user from SQL and nothing else - in other
 words, objects actually stored in database need not know anything
-neither about H2 nor its custom types.
+neither about H2 nor its custom types. However, please note that all objects
+built by a ""CustomType"" implementation must be ""Serializable"" just like
+any other object stored in an ""JAVA_OBJECT"" typed column.
 
 Please have a look at ""CustomTypes"" sample in H2 sources to get an example
 of how custom types may be used.
