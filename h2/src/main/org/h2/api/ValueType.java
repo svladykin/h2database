@@ -11,12 +11,12 @@ import org.h2.value.Value;
 import java.util.ArrayList;
 
 /**
- * Interface for custom types to define their construction logic
- * based on more 'primitive' {@link Value}s.
+ * Interface for user defined value types to declare their
+ * construction logic based on {@link Value}s of built-in types.
  *
  * @author apaschenko
  */
-public interface CustomType {
+public interface ValueType {
     void init(DataHandler dataHandler, ArrayList<String> params);
 
     Value convert(Value value);

@@ -728,24 +728,24 @@ Creates new value type with specified name from given Java class.
 
 Effective column data type for such types is ""JAVA_OBJECT"".
 
-Custom types are meant to extend capabilities of SQL and allow the user
+User defined value types are meant to extend capabilities of SQL and allow the user
 to introduce custom logic for construction of the objects. Say, one could
 create a custom type that would be capable of parsing given string literal
 to JSON and, by using some arbitrary logic, analyze that JSON and yield
 Java objects of any type and structure.
 
-All classes representing custom types must implement ""org.h2.api.CustomType""
+All classes representing user defined value types must implement ""org.h2.api.ValueType""
 interface. Implementations of this interface effectively shall contain logic
 to build the objects needed by the user from SQL and nothing else - in other
 words, objects actually stored in database need not know anything
-neither about H2 nor its custom types. However, please note that all objects
-built by a ""CustomType"" implementation must be ""Serializable"" just like
+neither about H2 nor its value types. However, please note that all objects
+built by a ""ValueType"" implementation must be ""Serializable"" just like
 any other object stored in an ""JAVA_OBJECT"" typed column.
 
-Please have a look at ""CustomTypes"" sample in H2 sources to get an example
-of how custom types may be used.
+Please have a look at ""UserValueTypes"" sample in H2 sources to get an example
+of how value types may be used.
 ","
-CREATE VALUE TYPE CUSTOM FOR ""org.acme.CustomType"" WITH ""customTypeParam""
+CREATE VALUE TYPE COMPLEX FOR ""org.acme.ComplexNumber"" WITH ""precision=1e-6""
 "
 
 "Commands (DDL)","CREATE VIEW","

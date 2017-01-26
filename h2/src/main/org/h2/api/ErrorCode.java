@@ -1937,27 +1937,27 @@ public class ErrorCode {
 
     /**
      * The error with code <code>90144</code> is thrown when
-     * trying to register custom data type if an object with this name already exists.
+     * trying to register value type if an object with this name already exists.
      * Example:
      *+
-     * CREATE VALUE TYPE FOO FOR "org.acme.Foo";
-     * CREATE VALUE TYPE BAR FOR "org.acme.Bar";
-     * CREATE VALUE TYPE BAR FOR "org.acme.Bar";
+     * CREATE VALUE TYPE MATRIX FOR "org.acme.Matrix";
+     * CREATE VALUE TYPE COMPLEX FOR "org.acme.Complex";
+     * CREATE VALUE TYPE COMPLEX FOR "org.acme.Complex";
      * </pre>
      */
-    public static final int CUSTOM_DATA_TYPE_ALREADY_EXISTS_1 = 90144;
+    public static final int USER_VALUE_TYPE_ALREADY_EXISTS_1 = 90144;
 
     /**
      * The error with code <code>90110</code> is thrown when
-     * trying to drop a custom type that doesn't exist.
+     * trying to drop a value type that doesn't exist.
      * Example:
      * <pre>
      * DROP TYPE UNKNOWN;
      * </pre>
      */
-    public static final int CUSTOM_DATA_TYPE_NOT_FOUND_1 = 90110;
+    public static final int USER_VALUE_TYPE_NOT_FOUND_1 = 90110;
 
-    // next are 90110, 90122
+    // next are 90122, 90145
 
     private ErrorCode() {
         // utility class

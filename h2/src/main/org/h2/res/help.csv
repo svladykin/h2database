@@ -226,7 +226,7 @@ Creates a new user."
 CREATE VALUE TYPE [ IF NOT EXISTS ] newTypeName FOR className
 [ WITH typeParam [,...] ]
 ","
-Creates new value type from Java class."
+Creates new value type with specified name from given Java class."
 "Commands (DDL)","CREATE VIEW","
 CREATE [ OR REPLACE ] [ FORCE ] VIEW [ IF NOT EXISTS ] newViewName
 [ ( columnName [,...] ) ] AS select

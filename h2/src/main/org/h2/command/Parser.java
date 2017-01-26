@@ -32,7 +32,7 @@ import org.h2.command.ddl.AlterView;
 import org.h2.command.ddl.Analyze;
 import org.h2.command.ddl.CreateAggregate;
 import org.h2.command.ddl.CreateConstant;
-import org.h2.command.ddl.CreateCustomDataType;
+import org.h2.command.ddl.CreateUserValueType;
 import org.h2.command.ddl.CreateFunctionAlias;
 import org.h2.command.ddl.CreateIndex;
 import org.h2.command.ddl.CreateLinkedTable;
@@ -49,7 +49,7 @@ import org.h2.command.ddl.DeallocateProcedure;
 import org.h2.command.ddl.DefineCommand;
 import org.h2.command.ddl.DropAggregate;
 import org.h2.command.ddl.DropConstant;
-import org.h2.command.ddl.DropCustomDataType;
+import org.h2.command.ddl.DropUserValueType;
 import org.h2.command.ddl.DropDatabase;
 import org.h2.command.ddl.DropFunctionAlias;
 import org.h2.command.ddl.DropIndex;
@@ -88,7 +88,7 @@ import org.h2.command.dml.TransactionCommand;
 import org.h2.command.dml.Update;
 import org.h2.constraint.ConstraintReferential;
 import org.h2.engine.Constants;
-import org.h2.engine.CustomDataType;
+import org.h2.engine.UserValueType;
 import org.h2.engine.Database;
 import org.h2.engine.DbObject;
 import org.h2.engine.FunctionAlias;
@@ -1518,7 +1518,7 @@ public class Parser {
         } else if (readIf("AGGREGATE")) {
             return parseDropAggregate();
         } else if (readIf("VALUE")) {
-            return parseDropCustomDataType();
+            return parseDropUserValueType();
         }
         throw getSyntaxError();
     }
@@ -1532,10 +1532,10 @@ public class Parser {
         return command;
     }
 
-    private DropCustomDataType parseDropCustomDataType() {
+    private DropUserValueType parseDropUserValueType() {
         read("TYPE");
         boolean ifExists = readIfExists(false);
-        DropCustomDataType command = new DropCustomDataType(session);
+        DropUserValueType command = new DropUserValueType(session);
         command.setTypeName(readUniqueIdentifier());
         ifExists = readIfExists(ifExists);
         command.setIfExists(ifExists);
@@ -4145,7 +4145,7 @@ public class Parser {
             original = StringUtils.toUpperEnglish(original);
         }
         UserDataType userDataType = database.findUserDataType(original);
-        CustomDataType customDataType = database.findCustomDataType(original);
+        UserValueType userValueType = database.findUserValueType(original);
         if (userDataType != null) {
             templateColumn = userDataType.getColumn();
             dataType = DataType.getDataType(templateColumn.getType());
@@ -4154,7 +4154,7 @@ public class Parser {
             precision = templateColumn.getPrecision();
             displaySize = templateColumn.getDisplaySize();
             scale = templateColumn.getScale();
-        } else if (customDataType != null) {
+        } else if (userValueType != null) {
             dataType = DataType.getTypeByName("JAVA_OBJECT");
         } else {
             dataType = DataType.getTypeByName(original);
@@ -4249,7 +4249,7 @@ public class Parser {
         }
         column.setComment(comment);
         column.setOriginalSQL(original);
-        column.setCustomType(customDataType != null ? customDataType.getCustomType() : null);
+        column.setValueType(userValueType != null ? userValueType.getValueType() : null);
         return column;
     }
 
@@ -4288,7 +4288,7 @@ public class Parser {
             return parseCreateLinkedTable(false, false, force);
         }
         else if (readIf("VALUE")) {
-            return parseCreateCustomDataType();
+            return parseCreateUserValueType();
         }
         // tables or linked tables
         boolean memory = false, cached = false;
@@ -4706,15 +4706,15 @@ public class Parser {
         return command;
     }
 
-    private Prepared parseCreateCustomDataType() {
+    private Prepared parseCreateUserValueType() {
         read("TYPE");
         boolean ifNotExists = readIfNotExists();
         String name = readUniqueIdentifier();
         if (isKeyword(name)) {
-            throw DbException.get(ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
+            throw DbException.get(ErrorCode.USER_VALUE_TYPE_ALREADY_EXISTS_1,
                 name);
         }
-        CreateCustomDataType command = new CreateCustomDataType(session);
+        CreateUserValueType command = new CreateUserValueType(session);
         command.setName(name);
         command.setIfNotExists(ifNotExists);
         read("FOR");

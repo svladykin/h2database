@@ -6,10 +6,9 @@
 package org.h2.command.ddl;
 
 import java.util.ArrayList;
-import org.h2.api.CustomType;
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
-import org.h2.engine.CustomDataType;
+import org.h2.engine.UserValueType;
 import org.h2.engine.Database;
 import org.h2.engine.Session;
 import org.h2.message.DbException;
@@ -22,14 +21,14 @@ import org.h2.value.DataType;
  *
  * @author apaschenko
  */
-public class CreateCustomDataType extends DefineCommand {
+public class CreateUserValueType extends DefineCommand {
 
     private String name;
     private String className;
     private ArrayList<String> params;
     private boolean ifNotExists;
 
-    public CreateCustomDataType(Session session) {
+    public CreateUserValueType(Session session) {
         super(session);
     }
 
@@ -55,12 +54,12 @@ public class CreateCustomDataType extends DefineCommand {
         session.commit(true);
         Database db = session.getDatabase();
         session.getUser().checkAdmin();
-        if (db.findCustomDataType(name) != null) {
+        if (db.findUserValueType(name) != null) {
             if (ifNotExists) {
                 return 0;
             }
             throw DbException.get(
-                    ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
+                    ErrorCode.USER_VALUE_TYPE_ALREADY_EXISTS_1,
                 name);
         }
 
@@ -69,21 +68,21 @@ public class CreateCustomDataType extends DefineCommand {
         if (builtIn != null) {
             if (!builtIn.hidden) {
                 throw DbException.get(
-                        ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
+                        ErrorCode.USER_VALUE_TYPE_ALREADY_EXISTS_1,
                     name);
             }
             Table table = session.getDatabase().getFirstUserTable();
             if (table != null) {
                 throw DbException.get(
-                        ErrorCode.CUSTOM_DATA_TYPE_ALREADY_EXISTS_1,
+                        ErrorCode.USER_VALUE_TYPE_ALREADY_EXISTS_1,
                         name + " (" + table.getSQL() + ")");
             }
         }
 
-        CustomType type;
+        org.h2.api.ValueType type;
 
         try {
-            type = (CustomType) JdbcUtils.loadUserClass(className).newInstance();
+            type = (org.h2.api.ValueType) JdbcUtils.loadUserClass(className).newInstance();
             type.init(session.getDataHandler(), params);
         } catch (Exception e) {
             throw DbException.convert(e);
@@ -91,9 +90,9 @@ public class CreateCustomDataType extends DefineCommand {
 
         int id = getObjectId();
 
-        CustomDataType customDataType = new CustomDataType(db, id, name, type, params);
+        UserValueType userValueType = new UserValueType(db, id, name, type, params);
 
-        db.addDatabaseObject(session, customDataType);
+        db.addDatabaseObject(session, userValueType);
 
         return 0;
     }

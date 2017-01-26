@@ -7,7 +7,7 @@ package org.h2.command.ddl;
 
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
-import org.h2.engine.CustomDataType;
+import org.h2.engine.UserValueType;
 import org.h2.engine.Database;
 import org.h2.engine.Session;
 import org.h2.message.DbException;
@@ -17,11 +17,11 @@ import org.h2.message.DbException;
  *
  * @author apaschenko
  */
-public class DropCustomDataType extends DefineCommand {
+public class DropUserValueType extends DefineCommand {
     private String typeName;
     private boolean ifExists;
 
-    public DropCustomDataType(Session session) {
+    public DropUserValueType(Session session) {
         super(session);
     }
 
@@ -34,10 +34,10 @@ public class DropCustomDataType extends DefineCommand {
         session.getUser().checkAdmin();
         session.commit(true);
         Database db = session.getDatabase();
-        CustomDataType type = db.findCustomDataType(typeName);
+        UserValueType type = db.findUserValueType(typeName);
         if (type == null) {
             if (!ifExists) {
-                throw DbException.get(ErrorCode.CUSTOM_DATA_TYPE_NOT_FOUND_1, typeName);
+                throw DbException.get(ErrorCode.USER_VALUE_TYPE_NOT_FOUND_1, typeName);
             }
         } else {
             db.removeDatabaseObject(session, type);

@@ -14,7 +14,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import org.h2.api.CustomType;
+import org.h2.api.ValueType;
 import org.h2.api.ErrorCode;
 import org.h2.message.DbException;
 import org.h2.store.DataHandler;
@@ -25,11 +25,11 @@ import org.h2.value.ValueNull;
 import sun.org.mozilla.javascript.internal.NativeObject;
 
 /**
- * Sample showcasing use of custom types.
+ * Sample showcasing use of value types.
  *
  * @author apaschenko
  */
-public class CustomTypes {
+public class UserValueTypes {
     public static void main(String[] args) throws Exception {
         // delete the database named 'test' in the user home directory
         DeleteDbFiles.execute("~", "test", true);
@@ -40,7 +40,7 @@ public class CustomTypes {
 
         // Register custom type
         stat.execute("create value type person for " +
-            "\"org.h2.samples.CustomTypes$PersonType\"");
+            "\"org.h2.samples.UserValueTypes$PersonType\"");
 
         stat.execute("create table test(id int primary key, p PERSON)");
 
@@ -82,7 +82,7 @@ public class CustomTypes {
         }
     }
 
-    public final static class PersonType implements CustomType {
+    public final static class PersonType implements ValueType {
         private DataHandler handler;
 
         @Override

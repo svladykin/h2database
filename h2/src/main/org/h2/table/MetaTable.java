@@ -23,7 +23,7 @@ import org.h2.constraint.ConstraintCheck;
 import org.h2.constraint.ConstraintReferential;
 import org.h2.constraint.ConstraintUnique;
 import org.h2.engine.Constants;
-import org.h2.engine.CustomDataType;
+import org.h2.engine.UserValueType;
 import org.h2.engine.Database;
 import org.h2.engine.DbObject;
 import org.h2.engine.FunctionAlias;
@@ -109,8 +109,8 @@ public class MetaTable extends Table {
     private static final int LOCKS = 26;
     private static final int SESSION_STATE = 27;
     private static final int QUERY_STATISTICS = 28;
-    private static final int CUSTOM_TYPES = 29;
-    private static final int META_TABLE_TYPE_COUNT = CUSTOM_TYPES + 1;
+    private static final int VALUE_TYPES = 29;
+    private static final int META_TABLE_TYPE_COUNT = VALUE_TYPES + 1;
 
     private final int type;
     private final int indexColumn;
@@ -539,8 +539,8 @@ public class MetaTable extends Table {
             );
             break;
         }
-        case CUSTOM_TYPES: {
-            setObjectName("CUSTOM_TYPES");
+        case VALUE_TYPES: {
+            setObjectName("VALUE_TYPES");
             cols = createColumns(
                 "CLASS_NAME",
                 "SQL"
@@ -1868,10 +1868,10 @@ public class MetaTable extends Table {
             }
             break;
         }
-        case CUSTOM_TYPES: {
-            for (CustomDataType dt : database.getAllCustomDataTypes()) {
+        case VALUE_TYPES: {
+            for (UserValueType dt : database.getAllUserValueTypes()) {
                 add(rows,
-                    dt.getCustomType().getClass().getName(),
+                    dt.getValueType().getClass().getName(),
                     "" + dt.getCreateSQL()
                 );
             }

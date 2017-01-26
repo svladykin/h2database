@@ -3196,13 +3196,13 @@ drop domain email;
 drop domain gmail;
 > ok
 
-CREATE VALUE TYPE person FOR "org.h2.samples.CustomTypes$PersonType" WITH param1,param2;
+CREATE VALUE TYPE person FOR "org.h2.samples.UserValueTypes$PersonType" WITH param1,param2;
 > ok
 
-select CLASS_NAME, SQL from information_schema.custom_types;
-> CLASS_NAME                            SQL
-> ------------------------------------- ----------------------------------------------------------------------------------------
-> org.h2.samples.CustomTypes$PersonType CREATE VALUE TYPE PERSON FOR "org.h2.samples.CustomTypes$PersonType" WITH PARAM1, PARAM2
+select CLASS_NAME, SQL from information_schema.value_types;
+> CLASS_NAME                               SQL
+> ---------------------------------------- -------------------------------------------------------------------------------------------
+> org.h2.samples.UserValueTypes$PersonType CREATE VALUE TYPE PERSON FOR "org.h2.samples.UserValueTypes$PersonType" WITH PARAM1, PARAM2
 > rows: 1
 
 drop VALUE TYPE person;

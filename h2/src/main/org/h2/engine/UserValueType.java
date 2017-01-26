@@ -6,24 +6,24 @@
 package org.h2.engine;
 
 import java.util.ArrayList;
-import org.h2.api.CustomType;
+import org.h2.api.ValueType;
 import org.h2.command.Parser;
 import org.h2.message.Trace;
 import org.h2.table.Table;
 import org.h2.util.StatementBuilder;
 
 /**
- * Represents a custom data type
+ * Represents a value type
  * (a class with custom construction logic from {@link org.h2.value.Value}s).
  *
  * @author apaschenko
  */
-public class CustomDataType extends DbObjectBase {
-    private final CustomType type;
+public class UserValueType extends DbObjectBase {
+    private final ValueType type;
 
     private final ArrayList<String> typeParams;
 
-    public CustomDataType(Database database, int id, String name, CustomType type, ArrayList<String> typeParams) {
+    public UserValueType(Database database, int id, String name, org.h2.api.ValueType type, ArrayList<String> typeParams) {
         assert type != null;
 
         this.type = type;
@@ -41,7 +41,7 @@ public class CustomDataType extends DbObjectBase {
         StatementBuilder buff = new StatementBuilder("CREATE VALUE TYPE ")
             .append(getSQL())
             .append("\n    FOR ")
-            .append(Parser.quoteIdentifier(getCustomType().getClass().getName()));
+            .append(Parser.quoteIdentifier(getValueType().getClass().getName()));
 
         if (typeParams != null && !typeParams.isEmpty()) {
             buff.append("\n    WITH ");
@@ -55,7 +55,7 @@ public class CustomDataType extends DbObjectBase {
         return buff.toString();
     }
 
-    public CustomType getCustomType() {
+    public ValueType getValueType() {
         return type;
     }
 
@@ -66,7 +66,7 @@ public class CustomDataType extends DbObjectBase {
 
     @Override
     public int getType() {
-        return DbObject.CUSTOM_DATATYPE;
+        return DbObject.USER_VALUE_TYPE;
     }
 
     @Override

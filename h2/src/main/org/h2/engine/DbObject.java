@@ -90,9 +90,9 @@ public interface DbObject {
     int AGGREGATE = 14;
 
     /**
-     * This object is an user introduced custom Java object data type (domain).
+     * This object is an user defined value type.
      */
-    int CUSTOM_DATATYPE = 15;
+    int USER_VALUE_TYPE = 15;
 
     /**
      * Get the SQL name of this object (may be quoted).

@@ -110,7 +110,7 @@ public class Database implements DataHandler {
     private final HashMap<String, UserAggregate> aggregates = New.hashMap();
     private final HashMap<String, Comment> comments = New.hashMap();
     private final HashMap<String, TableEngine> tableEngines = New.hashMap();
-    private final HashMap<String, CustomDataType> customDataTypes = New.hashMap();
+    private final HashMap<String, UserValueType> valueTypes = New.hashMap();
 
     private final Set<Session> userSessions =
             Collections.synchronizedSet(new HashSet<Session>());
@@ -988,8 +988,8 @@ public class Database implements DataHandler {
         case DbObject.AGGREGATE:
             result = aggregates;
             break;
-        case DbObject.CUSTOM_DATATYPE:
-            result = customDataTypes;
+        case DbObject.USER_VALUE_TYPE:
+            result = valueTypes;
             break;
         default:
             throw DbException.throwInternalError("type=" + type);
@@ -1122,13 +1122,13 @@ public class Database implements DataHandler {
     }
 
     /**
-     * Get the custom data type if it exists, or null if not.
+     * Get the value type if it exists, or null if not.
      *
      * @param name the name of the custom data type
      * @return the custom data type or null
      */
-    public CustomDataType findCustomDataType(String name) {
-        return customDataTypes.get(name);
+    public UserValueType findUserValueType(String name) {
+        return valueTypes.get(name);
     }
 
     /**
@@ -1581,8 +1581,8 @@ public class Database implements DataHandler {
         return New.arrayList(userDataTypes.values());
     }
 
-    public ArrayList<CustomDataType> getAllCustomDataTypes() {
-        return New.arrayList(customDataTypes.values());
+    public ArrayList<UserValueType> getAllUserValueTypes() {
+        return New.arrayList(valueTypes.values());
     }
 
     public ArrayList<User> getAllUsers() {

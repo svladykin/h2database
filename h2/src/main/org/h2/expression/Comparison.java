@@ -7,13 +7,11 @@ package org.h2.expression;
 
 import java.util.Arrays;
 
-import org.h2.api.CustomType;
 import org.h2.engine.Database;
 import org.h2.engine.Session;
 import org.h2.engine.SysProperties;
 import org.h2.index.IndexCondition;
 import org.h2.message.DbException;
-import org.h2.table.Column;
 import org.h2.table.ColumnResolver;
 import org.h2.table.TableFilter;
 import org.h2.util.New;
