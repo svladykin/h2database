@@ -542,6 +542,8 @@ public class MetaTable extends Table {
         case VALUE_TYPES: {
             setObjectName("VALUE_TYPES");
             cols = createColumns(
+                "CATALOG",
+                "TYPE_NAME",
                 "CLASS_NAME",
                 "SQL"
             );
@@ -1871,6 +1873,8 @@ public class MetaTable extends Table {
         case VALUE_TYPES: {
             for (UserValueType dt : database.getAllUserValueTypes()) {
                 add(rows,
+                    catalog,
+                    identifier(dt.getName()),
                     dt.getValueType().getClass().getName(),
                     "" + dt.getCreateSQL()
                 );
