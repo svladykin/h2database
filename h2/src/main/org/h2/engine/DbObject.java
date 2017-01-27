@@ -90,6 +90,11 @@ public interface DbObject {
     int AGGREGATE = 14;
 
     /**
+     * This object is an user defined value type.
+     */
+    int USER_VALUE_TYPE = 15;
+
+    /**
      * Get the SQL name of this object (may be quoted).
      *
      * @return the SQL name

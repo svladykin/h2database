@@ -3196,6 +3196,18 @@ drop domain email;
 drop domain gmail;
 > ok
 
+CREATE VALUE TYPE person FOR "org.h2.samples.UserValueTypes$PersonType" WITH param1,param2;
+> ok
+
+select CATALOG, TYPE_NAME, CLASS_NAME, SQL from information_schema.value_types;
+> CATALOG TYPE_NAME CLASS_NAME                               SQL
+> ------- --------- ---------------------------------------- -------------------------------------------------------------------------------------------
+> SCRIPT  PERSON    org.h2.samples.UserValueTypes$PersonType CREATE VALUE TYPE PERSON FOR "org.h2.samples.UserValueTypes$PersonType" WITH PARAM1, PARAM2
+> rows: 1
+
+drop VALUE TYPE person;
+> ok
+
 create force view address_view as select * from address;
 > ok
 

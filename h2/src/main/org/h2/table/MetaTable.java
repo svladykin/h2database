@@ -23,6 +23,7 @@ import org.h2.constraint.ConstraintCheck;
 import org.h2.constraint.ConstraintReferential;
 import org.h2.constraint.ConstraintUnique;
 import org.h2.engine.Constants;
+import org.h2.engine.UserValueType;
 import org.h2.engine.Database;
 import org.h2.engine.DbObject;
 import org.h2.engine.FunctionAlias;
@@ -108,7 +109,8 @@ public class MetaTable extends Table {
     private static final int LOCKS = 26;
     private static final int SESSION_STATE = 27;
     private static final int QUERY_STATISTICS = 28;
-    private static final int META_TABLE_TYPE_COUNT = QUERY_STATISTICS + 1;
+    private static final int VALUE_TYPES = 29;
+    private static final int META_TABLE_TYPE_COUNT = VALUE_TYPES + 1;
 
     private final int type;
     private final int indexColumn;
@@ -534,6 +536,16 @@ public class MetaTable extends Table {
                     "CUMULATIVE_ROW_COUNT LONG",
                     "AVERAGE_ROW_COUNT DOUBLE",
                     "STD_DEV_ROW_COUNT DOUBLE"
+            );
+            break;
+        }
+        case VALUE_TYPES: {
+            setObjectName("VALUE_TYPES");
+            cols = createColumns(
+                "CATALOG",
+                "TYPE_NAME",
+                "CLASS_NAME",
+                "SQL"
             );
             break;
         }
@@ -1855,6 +1867,17 @@ public class MetaTable extends Table {
                             "" + entry.getRowCountStandardDeviation()
                     );
                 }
+            }
+            break;
+        }
+        case VALUE_TYPES: {
+            for (UserValueType dt : database.getAllUserValueTypes()) {
+                add(rows,
+                    catalog,
+                    identifier(dt.getName()),
+                    dt.getValueType().getClass().getName(),
+                    "" + dt.getCreateSQL()
+                );
             }
             break;
         }

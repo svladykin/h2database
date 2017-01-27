@@ -6,6 +6,7 @@
 package org.h2.table;
 
 import java.sql.ResultSetMetaData;
+import org.h2.api.ValueType;
 import org.h2.api.ErrorCode;
 import org.h2.command.Parser;
 import org.h2.engine.Constants;
@@ -86,6 +87,7 @@ public class Column {
     private SingleColumnResolver resolver;
     private String comment;
     private boolean primaryKey;
+    private ValueType valueType;
 
     public Column(String name, int type) {
         this(name, type, -1, -1, -1);
@@ -146,7 +148,7 @@ public class Column {
      */
     public Value convert(Value v) {
         try {
-            return v.convertTo(type);
+            return valueType != null ? valueType.convert(v) : v.convertTo(type);
         } catch (DbException e) {
             if (e.getErrorCode() == ErrorCode.DATA_CONVERSION_ERROR_1) {
                 String target = (table == null ? "" : table.getName() + ": ") +
@@ -672,6 +674,14 @@ public class Column {
 
     public boolean isPrimaryKey() {
         return primaryKey;
+    }
+
+    public ValueType getValueType() {
+        return valueType;
+    }
+
+    public void setValueType(ValueType valueType) {
+        this.valueType = valueType;
     }
 
     @Override

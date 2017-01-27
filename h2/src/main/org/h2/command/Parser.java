@@ -32,6 +32,7 @@ import org.h2.command.ddl.AlterView;
 import org.h2.command.ddl.Analyze;
 import org.h2.command.ddl.CreateAggregate;
 import org.h2.command.ddl.CreateConstant;
+import org.h2.command.ddl.CreateUserValueType;
 import org.h2.command.ddl.CreateFunctionAlias;
 import org.h2.command.ddl.CreateIndex;
 import org.h2.command.ddl.CreateLinkedTable;
@@ -48,6 +49,7 @@ import org.h2.command.ddl.DeallocateProcedure;
 import org.h2.command.ddl.DefineCommand;
 import org.h2.command.ddl.DropAggregate;
 import org.h2.command.ddl.DropConstant;
+import org.h2.command.ddl.DropUserValueType;
 import org.h2.command.ddl.DropDatabase;
 import org.h2.command.ddl.DropFunctionAlias;
 import org.h2.command.ddl.DropIndex;
@@ -86,6 +88,7 @@ import org.h2.command.dml.TransactionCommand;
 import org.h2.command.dml.Update;
 import org.h2.constraint.ConstraintReferential;
 import org.h2.engine.Constants;
+import org.h2.engine.UserValueType;
 import org.h2.engine.Database;
 import org.h2.engine.DbObject;
 import org.h2.engine.FunctionAlias;
@@ -1514,6 +1517,8 @@ public class Parser {
             return parseDropUserDataType();
         } else if (readIf("AGGREGATE")) {
             return parseDropAggregate();
+        } else if (readIf("VALUE")) {
+            return parseDropUserValueType();
         }
         throw getSyntaxError();
     }
@@ -1521,6 +1526,16 @@ public class Parser {
     private DropUserDataType parseDropUserDataType() {
         boolean ifExists = readIfExists(false);
         DropUserDataType command = new DropUserDataType(session);
+        command.setTypeName(readUniqueIdentifier());
+        ifExists = readIfExists(ifExists);
+        command.setIfExists(ifExists);
+        return command;
+    }
+
+    private DropUserValueType parseDropUserValueType() {
+        read("TYPE");
+        boolean ifExists = readIfExists(false);
+        DropUserValueType command = new DropUserValueType(session);
         command.setTypeName(readUniqueIdentifier());
         ifExists = readIfExists(ifExists);
         command.setIfExists(ifExists);
@@ -4130,6 +4145,7 @@ public class Parser {
             original = StringUtils.toUpperEnglish(original);
         }
         UserDataType userDataType = database.findUserDataType(original);
+        UserValueType userValueType = database.findUserValueType(original);
         if (userDataType != null) {
             templateColumn = userDataType.getColumn();
             dataType = DataType.getDataType(templateColumn.getType());
@@ -4138,6 +4154,8 @@ public class Parser {
             precision = templateColumn.getPrecision();
             displaySize = templateColumn.getDisplaySize();
             scale = templateColumn.getScale();
+        } else if (userValueType != null) {
+            dataType = DataType.getTypeByName("JAVA_OBJECT");
         } else {
             dataType = DataType.getTypeByName(original);
             if (dataType == null) {
@@ -4231,6 +4249,7 @@ public class Parser {
         }
         column.setComment(comment);
         column.setOriginalSQL(original);
+        column.setValueType(userValueType != null ? userValueType.getValueType() : null);
         return column;
     }
 
@@ -4267,6 +4286,9 @@ public class Parser {
             return parseCreateAggregate(force);
         } else if (readIf("LINKED")) {
             return parseCreateLinkedTable(false, false, force);
+        }
+        else if (readIf("VALUE")) {
+            return parseCreateUserValueType();
         }
         // tables or linked tables
         boolean memory = false, cached = false;
@@ -4681,6 +4703,29 @@ public class Parser {
         col.rename(null);
         command.setColumn(col);
         command.setIfNotExists(ifNotExists);
+        return command;
+    }
+
+    private Prepared parseCreateUserValueType() {
+        read("TYPE");
+        boolean ifNotExists = readIfNotExists();
+        String name = readUniqueIdentifier();
+        if (isKeyword(name)) {
+            throw DbException.get(ErrorCode.USER_VALUE_TYPE_ALREADY_EXISTS_1,
+                name);
+        }
+        CreateUserValueType command = new CreateUserValueType(session);
+        command.setName(name);
+        command.setIfNotExists(ifNotExists);
+        read("FOR");
+        command.setClassName(readUniqueIdentifier());
+        if (readIf("WITH")) {
+            ArrayList<String> typeParams = New.arrayList();
+            do {
+                typeParams.add(readUniqueIdentifier());
+            } while (readIf(","));
+            command.setParams(typeParams);
+        }
         return command;
     }
 

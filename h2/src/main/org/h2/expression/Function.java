@@ -23,6 +23,7 @@ import java.util.TimeZone;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.h2.api.ErrorCode;
+import org.h2.api.ValueType;
 import org.h2.command.Command;
 import org.h2.command.Parser;
 import org.h2.engine.Constants;
@@ -151,6 +152,7 @@ public class Function extends Expression implements FunctionCall {
     private int dataType, scale;
     private long precision = PRECISION_UNKNOWN;
     private int displaySize;
+    private ValueType valueType;
     private final Database database;
 
     static {
@@ -941,7 +943,7 @@ public class Function extends Expression implements FunctionCall {
             break;
         case CAST:
         case CONVERT: {
-            v0 = v0.convertTo(dataType);
+            v0 = valueType != null ? valueType.convert(v0) : v0.convertTo(dataType);
             Mode mode = database.getMode();
             v0 = v0.convertScale(mode.convertOnlyToSmallerScale, scale);
             v0 = v0.convertPrecision(getPrecision(), false);
@@ -2293,6 +2295,7 @@ public class Function extends Expression implements FunctionCall {
         precision = col.getPrecision();
         displaySize = col.getDisplaySize();
         scale = col.getScale();
+        valueType = col.getValueType();
     }
 
     @Override
