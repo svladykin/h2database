@@ -201,7 +201,7 @@ public class Comparison extends Condition {
                     // If not the column values will need to be promoted
                     // to constant type, but vise versa, then let's do this here once.
                     if (constType != resType)
-                        right = ValueExpression.get(((ExpressionColumn) left).getColumn().convert(r));
+                        right = ValueExpression.get(r.convertTo(resType, session.getDatabase()));
                 } else if (right instanceof Parameter) {
                     ((Parameter) right).setColumn(
                             ((ExpressionColumn) left).getColumn());

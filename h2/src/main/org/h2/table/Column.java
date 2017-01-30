@@ -87,7 +87,6 @@ public class Column {
     private SingleColumnResolver resolver;
     private String comment;
     private boolean primaryKey;
-    private ValueType valueType;
 
     public Column(String name, int type) {
         this(name, type, -1, -1, -1);
@@ -674,14 +673,6 @@ public class Column {
 
     public boolean isPrimaryKey() {
         return primaryKey;
-    }
-
-    public ValueType getValueType() {
-        return valueType;
-    }
-
-    public void setValueType(ValueType valueType) {
-        this.valueType = valueType;
     }
 
     @Override
