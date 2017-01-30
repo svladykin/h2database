@@ -1150,8 +1150,8 @@ public abstract class Table extends SchemaObjectBase {
             return 0;
         }
         int dataType = Value.getHigherOrder(a.getType(), b.getType());
-        a = a.convertTo(dataType);
-        b = b.convertTo(dataType);
+        a = a.convertTo(dataType, getDatabase());
+        b = b.convertTo(dataType, getDatabase());
         return a.compareTypeSafe(b, compareMode);
     }
 

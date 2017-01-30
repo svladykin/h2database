@@ -270,7 +270,7 @@ public class JdbcArray extends TraceObject implements Array {
     }
 
     private Object[] get() {
-        return (Object[]) value.convertTo(Value.ARRAY).getObject();
+        return (Object[]) value.convertTo(Value.ARRAY, null).getObject();
     }
 
     private Object[] get(long index, int count) {

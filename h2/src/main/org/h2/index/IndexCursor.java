@@ -196,8 +196,8 @@ public class IndexCursor implements Cursor {
             // then it needs to overlap with the the union of a and b
             // (not the intersection)
             ValueGeometry vg = (ValueGeometry) row.getValue(columnId).
-                    convertTo(Value.GEOMETRY);
-            v = ((ValueGeometry) v.convertTo(Value.GEOMETRY)).
+                    convertTo(Value.GEOMETRY, session.getDatabase());
+            v = ((ValueGeometry) v.convertTo(Value.GEOMETRY, session.getDatabase())).
                     getEnvelopeUnion(vg);
         }
         if (columnId < 0) {
@@ -237,7 +237,7 @@ public class IndexCursor implements Cursor {
                 return a;
             }
         }
-        int comp = a.compareTo(b, table.getDatabase().getCompareMode());
+        int comp = a.compareTo(b, table.getDatabase().getCompareMode(), session.getDatabase());
         if (comp == 0) {
             return a;
         }

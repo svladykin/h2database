@@ -107,14 +107,14 @@ public class Operation extends Expression {
 
     @Override
     public Value getValue(Session session) {
-        Value l = left.getValue(session).convertTo(dataType);
+        Value l = left.getValue(session).convertTo(dataType, session.getDatabase());
         Value r;
         if (right == null) {
             r = null;
         } else {
             r = right.getValue(session);
             if (convertRight) {
-                r = r.convertTo(dataType);
+                r = r.convertTo(dataType, session.getDatabase());
             }
         }
         switch (opType) {

@@ -6,6 +6,7 @@
 package org.h2.expression;
 
 import java.util.Arrays;
+
 import org.h2.engine.Database;
 import org.h2.engine.Session;
 import org.h2.engine.SysProperties;
@@ -200,7 +201,7 @@ public class Comparison extends Condition {
                     // If not the column values will need to be promoted
                     // to constant type, but vise versa, then let's do this here once.
                     if (constType != resType)
-                        right = ValueExpression.get(r.convertTo(resType));
+                        right = ValueExpression.get(r.convertTo(resType, session.getDatabase()));
                 } else if (right instanceof Parameter) {
                     ((Parameter) right).setColumn(
                             ((ExpressionColumn) left).getColumn());
@@ -259,8 +260,8 @@ public class Comparison extends Condition {
             }
         }
         int dataType = Value.getHigherOrder(left.getType(), right.getType());
-        l = l.convertTo(dataType);
-        r = r.convertTo(dataType);
+        l = l.convertTo(dataType, session.getDatabase());
+        r = r.convertTo(dataType, session.getDatabase());
         boolean result = compareNotNull(database, l, r, compareType);
         return ValueBoolean.get(result);
     }
@@ -300,8 +301,8 @@ public class Comparison extends Condition {
             result = database.compare(l, r) < 0;
             break;
         case SPATIAL_INTERSECTS: {
-            ValueGeometry lg = (ValueGeometry) l.convertTo(Value.GEOMETRY);
-            ValueGeometry rg = (ValueGeometry) r.convertTo(Value.GEOMETRY);
+            ValueGeometry lg = (ValueGeometry) l.convertTo(Value.GEOMETRY, database);
+            ValueGeometry rg = (ValueGeometry) r.convertTo(Value.GEOMETRY, database);
             result = lg.intersectsBoundingBox(rg);
             break;
         }

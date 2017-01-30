@@ -260,7 +260,7 @@ public class Aggregate extends Expression {
         Value v = on == null ? null : on.getValue(session);
         if (type == GROUP_CONCAT) {
             if (v != ValueNull.INSTANCE) {
-                v = v.convertTo(Value.STRING);
+                v = v.convertTo(Value.STRING, session.getDatabase());
                 if (groupConcatOrderList != null) {
                     int size = groupConcatOrderList.size();
                     Value[] array = new Value[1 + size];

@@ -148,7 +148,7 @@ public class IndexCondition {
      * @param session the session
      * @return the value list
      */
-    public Value[] getCurrentValueList(Session session) {
+    public Value[] getCurrentValueList(final Session session) {
         HashSet<Value> valueSet = new HashSet<Value>();
         for (Expression e : expressionList) {
             Value v = e.getValue(session);
@@ -161,7 +161,7 @@ public class IndexCondition {
         Arrays.sort(array, new Comparator<Value>() {
             @Override
             public int compare(Value o1, Value o2) {
-                return o1.compareTo(o2, mode);
+                return o1.compareTo(o2, mode, session.getDatabase());
             }
         });
         return array;

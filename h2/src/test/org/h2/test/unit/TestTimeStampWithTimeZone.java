@@ -120,21 +120,21 @@ public class TestTimeStampWithTimeZone extends TestBase {
     private void test2() {
         ValueTimestampTimeZone a = ValueTimestampTimeZone.parse("1970-01-01 12:00:00.00+00:15");
         ValueTimestampTimeZone b = ValueTimestampTimeZone.parse("1970-01-01 12:00:01.00+01:15");
-        int c = a.compareTo(b, null);
+        int c = a.compareTo(b, null, null);
         assertEquals(c, 1);
     }
 
     private void test3() {
         ValueTimestampTimeZone a = ValueTimestampTimeZone.parse("1970-01-02 00:00:02.00+01:15");
         ValueTimestampTimeZone b = ValueTimestampTimeZone.parse("1970-01-01 23:00:01.00+00:15");
-        int c = a.compareTo(b, null);
+        int c = a.compareTo(b, null, null);
         assertEquals(c, 1);
     }
 
     private void test4() {
         ValueTimestampTimeZone a = ValueTimestampTimeZone.parse("1970-01-02 00:00:01.00+01:15");
         ValueTimestampTimeZone b = ValueTimestampTimeZone.parse("1970-01-01 23:00:01.00+00:15");
-        int c = a.compareTo(b, null);
+        int c = a.compareTo(b, null, null);
         assertEquals(c, 0);
     }
 

@@ -190,7 +190,7 @@ public class JavaAggregate extends Expression {
             Object arg = null;
             for (int i = 0, len = args.length; i < len; i++) {
                 Value v = args[i].getValue(session);
-                v = v.convertTo(argTypes[i]);
+                v = v.convertTo(argTypes[i], session.getDatabase());
                 arg = v.getObject();
                 argValues[i] = arg;
             }

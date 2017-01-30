@@ -129,7 +129,7 @@ public class SelectUnion extends Query {
         }
         for (int i = 0; i < columnCount; i++) {
             Expression e = expressions.get(i);
-            newValues[i] = values[i].convertTo(e.getType());
+            newValues[i] = values[i].convertTo(e.getType(), session.getDatabase());
         }
         return newValues;
     }

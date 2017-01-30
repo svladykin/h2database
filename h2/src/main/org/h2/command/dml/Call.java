@@ -64,7 +64,7 @@ public class Call extends Prepared {
         setCurrentRowNumber(1);
         Value v = expression.getValue(session);
         if (isResultSet) {
-            v = v.convertTo(Value.RESULT_SET);
+            v = v.convertTo(Value.RESULT_SET, session.getDatabase());
             ResultSet rs = v.getResultSet();
             return LocalResult.read(session, rs, maxrows);
         }

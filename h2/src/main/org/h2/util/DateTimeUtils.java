@@ -131,7 +131,7 @@ public class DateTimeUtils {
         if (value == ValueNull.INSTANCE) {
             return null;
         }
-        ValueDate d = (ValueDate) value.convertTo(Value.DATE);
+        ValueDate d = (ValueDate) value.convertTo(Value.DATE, null);
         Calendar cal = (Calendar) calendar.clone();
         cal.clear();
         cal.setLenient(true);
@@ -154,7 +154,7 @@ public class DateTimeUtils {
         if (value == ValueNull.INSTANCE) {
             return null;
         }
-        ValueTime t = (ValueTime) value.convertTo(Value.TIME);
+        ValueTime t = (ValueTime) value.convertTo(Value.TIME, null);
         Calendar cal = (Calendar) calendar.clone();
         cal.clear();
         cal.setLenient(true);
@@ -184,7 +184,7 @@ public class DateTimeUtils {
         if (value == ValueNull.INSTANCE) {
             return null;
         }
-        ValueTimestamp ts = (ValueTimestamp) value.convertTo(Value.TIMESTAMP);
+        ValueTimestamp ts = (ValueTimestamp) value.convertTo(Value.TIMESTAMP, null);
         Calendar cal = (Calendar) calendar.clone();
         cal.clear();
         cal.setLenient(true);

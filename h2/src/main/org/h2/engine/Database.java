@@ -110,6 +110,7 @@ public class Database implements DataHandler {
     private final HashMap<String, UserAggregate> aggregates = New.hashMap();
     private final HashMap<String, Comment> comments = New.hashMap();
     private final HashMap<String, TableEngine> tableEngines = New.hashMap();
+    private final HashMap<String, UserValueType> valueTypes = New.hashMap();
 
     private final Set<Session> userSessions =
             Collections.synchronizedSet(new HashSet<Session>());
@@ -354,7 +355,7 @@ public class Database implements DataHandler {
      */
     public boolean areEqual(Value a, Value b) {
         // can not use equals because ValueDecimal 0.0 is not equal to 0.00.
-        return a.compareTo(b, compareMode) == 0;
+        return a.compareTo(b, compareMode, this) == 0;
     }
 
     /**
@@ -367,7 +368,7 @@ public class Database implements DataHandler {
      *         1 otherwise
      */
     public int compare(Value a, Value b) {
-        return a.compareTo(b, compareMode);
+        return a.compareTo(b, compareMode, this);
     }
 
     /**
@@ -987,6 +988,9 @@ public class Database implements DataHandler {
         case DbObject.AGGREGATE:
             result = aggregates;
             break;
+        case DbObject.USER_VALUE_TYPE:
+            result = valueTypes;
+            break;
         default:
             throw DbException.throwInternalError("type=" + type);
         }
@@ -1115,6 +1119,16 @@ public class Database implements DataHandler {
      */
     public UserDataType findUserDataType(String name) {
         return userDataTypes.get(name);
+    }
+
+    /**
+     * Get the value type if it exists, or null if not.
+     *
+     * @param name the name of the custom data type
+     * @return the custom data type or null
+     */
+    public UserValueType findUserValueType(String name) {
+        return valueTypes.get(name);
     }
 
     /**
@@ -1565,6 +1579,10 @@ public class Database implements DataHandler {
 
     public ArrayList<UserDataType> getAllUserDataTypes() {
         return New.arrayList(userDataTypes.values());
+    }
+
+    public ArrayList<UserValueType> getAllUserValueTypes() {
+        return New.arrayList(valueTypes.values());
     }
 
     public ArrayList<User> getAllUsers() {

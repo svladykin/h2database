@@ -343,7 +343,7 @@ public class MVPrimaryIndex extends BaseIndex {
         } else if (v == ValueNull.INSTANCE) {
             return ifNull;
         }
-        return (ValueLong) v.convertTo(Value.LONG);
+        return (ValueLong) v.convertTo(Value.LONG, null);
     }
 
     /**

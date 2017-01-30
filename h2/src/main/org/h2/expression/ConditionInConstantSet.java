@@ -51,7 +51,7 @@ public class ConditionInConstantSet extends Condition {
         });
         int type = left.getType();
         for (Expression expression : valueList) {
-            valueSet.add(expression.getValue(session).convertTo(type));
+            valueSet.add(expression.getValue(session).convertTo(type, session.getDatabase()));
         }
     }
 
@@ -160,7 +160,7 @@ public class ConditionInConstantSet extends Condition {
         if (add != null) {
             if (add.isConstant()) {
                 valueList.add(add);
-                valueSet.add(add.getValue(session).convertTo(left.getType()));
+                valueSet.add(add.getValue(session).convertTo(left.getType(), session.getDatabase()));
                 return this;
             }
         }

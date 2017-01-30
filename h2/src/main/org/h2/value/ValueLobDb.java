@@ -14,6 +14,7 @@ import java.io.Reader;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import org.h2.engine.Constants;
+import org.h2.engine.Database;
 import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.mvstore.DataUtils;
@@ -181,10 +182,11 @@ public class ValueLobDb extends Value implements Value.ValueClob,
      * except when converting to BLOB or CLOB.
      *
      * @param t the new type
+     * @param database
      * @return the converted value
      */
     @Override
-    public Value convertTo(int t) {
+    public Value convertTo(int t, Database database) {
         if (t == type) {
             return this;
         } else if (t == Value.CLOB) {
@@ -204,7 +206,7 @@ public class ValueLobDb extends Value implements Value.ValueClob,
                 return ValueLobDb.createSmallLob(t, small);
             }
         }
-        return super.convertTo(t);
+        return super.convertTo(t, database);
     }
 
     @Override

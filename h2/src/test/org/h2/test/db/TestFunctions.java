@@ -336,7 +336,7 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         if (args.length == 0) {
             return null;
         }
-        return args[0].convertTo(Value.STRING);
+        return args[0].convertTo(Value.STRING, null);
     }
 
     private void testDefaultConnection() throws SQLException {

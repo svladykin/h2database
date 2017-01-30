@@ -3818,7 +3818,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         Value[] current = result.currentRow();
         CompareMode mode = conn.getCompareMode();
         for (int i = 0; i < row.length; i++) {
-            if (row[i].compareTo(current[i], mode) != 0) {
+            if (row[i].compareTo(current[i], mode, null) != 0) {
                 changed = true;
                 break;
             }

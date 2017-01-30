@@ -51,6 +51,6 @@ class AggregateDataSelectivity extends AggregateData {
             s = s <= 0 ? 1 : s > 100 ? 100 : s;
         }
         v = ValueInt.get(s);
-        return v.convertTo(dataType);
+        return v.convertTo(dataType, database);
     }
 }

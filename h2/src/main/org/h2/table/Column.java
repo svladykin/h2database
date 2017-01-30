@@ -6,6 +6,7 @@
 package org.h2.table;
 
 import java.sql.ResultSetMetaData;
+import org.h2.api.ValueType;
 import org.h2.api.ErrorCode;
 import org.h2.command.Parser;
 import org.h2.engine.Constants;
@@ -146,7 +147,7 @@ public class Column {
      */
     public Value convert(Value v) {
         try {
-            return v.convertTo(type);
+            return v.convertTo(type, getTable().getDatabase());
         } catch (DbException e) {
             if (e.getErrorCode() == ErrorCode.DATA_CONVERSION_ERROR_1) {
                 String target = (table == null ? "" : table.getName() + ": ") +
@@ -277,7 +278,7 @@ public class Column {
             if (localDefaultExpression == null) {
                 value = ValueNull.INSTANCE;
             } else {
-                value = localDefaultExpression.getValue(session).convertTo(type);
+                value = localDefaultExpression.getValue(session).convertTo(type, session.getDatabase());
                 if (primaryKey) {
                     session.setLastIdentity(value);
                 }
@@ -286,13 +287,13 @@ public class Column {
         Mode mode = session.getDatabase().getMode();
         if (value == ValueNull.INSTANCE) {
             if (convertNullToDefault) {
-                value = localDefaultExpression.getValue(session).convertTo(type);
+                value = localDefaultExpression.getValue(session).convertTo(type, session.getDatabase());
             }
             if (value == ValueNull.INSTANCE && !nullable) {
                 if (mode.convertInsertNullToZero) {
                     DataType dt = DataType.getDataType(type);
                     if (dt.decimal) {
-                        value = ValueInt.get(0).convertTo(type);
+                        value = ValueInt.get(0).convertTo(type, session.getDatabase());
                     } else if (dt.type == Value.TIMESTAMP) {
                         value = ValueTimestamp.fromMillis(session.getTransactionStart());
                     } else if (dt.type == Value.TIMESTAMP_TZ) {
@@ -305,7 +306,7 @@ public class Column {
                     } else if (dt.type == Value.DATE) {
                         value = ValueDate.fromMillis(session.getTransactionStart());
                     } else {
-                        value = ValueString.get("").convertTo(type);
+                        value = ValueString.get("").convertTo(type, session.getDatabase());
                     }
                 } else {
                     throw DbException.get(ErrorCode.NULL_NOT_ALLOWED, name);

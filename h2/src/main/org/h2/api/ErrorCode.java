@@ -1935,7 +1935,29 @@ public class ErrorCode {
      */
     public static final int ROW_NOT_FOUND_IN_PRIMARY_INDEX = 90143;
 
-    // next are 90110, 90122, 90144
+    /**
+     * The error with code <code>90144</code> is thrown when
+     * trying to register value type if an object with this name already exists.
+     * Example:
+     *+
+     * CREATE VALUE TYPE MATRIX FOR "org.acme.Matrix";
+     * CREATE VALUE TYPE COMPLEX FOR "org.acme.Complex";
+     * CREATE VALUE TYPE COMPLEX FOR "org.acme.Complex";
+     * </pre>
+     */
+    public static final int USER_VALUE_TYPE_ALREADY_EXISTS_1 = 90144;
+
+    /**
+     * The error with code <code>90110</code> is thrown when
+     * trying to drop a value type that doesn't exist.
+     * Example:
+     * <pre>
+     * DROP TYPE UNKNOWN;
+     * </pre>
+     */
+    public static final int USER_VALUE_TYPE_NOT_FOUND_1 = 90110;
+
+    // next are 90122, 90145
 
     private ErrorCode() {
         // utility class
