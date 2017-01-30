@@ -111,7 +111,19 @@ public class ValueArray extends Value {
         for (int i = 0; i < len; i++) {
             Value v1 = values[i];
             Value v2 = v.values[i];
-            int comp = v1.compareTo(v2, mode, database);
+
+            if (v1.isUserDefinedType() ^ v2.isUserDefinedType()) {
+                ValueUserDefined uv = v1.isUserDefinedType() ? (ValueUserDefined) v1 : (ValueUserDefined) v2;
+
+                // Handling conversions here frees us of the need
+                // to have reference to Database below, in compareTo
+                if (uv == v1)
+                    v2 = uv.getValueType().convert(v2);
+                else
+                    v1 = uv.getValueType().convert(v1);
+            }
+
+            int comp = v1.compareTo(v2, mode, null);
             if (comp != 0) {
                 return comp;
             }

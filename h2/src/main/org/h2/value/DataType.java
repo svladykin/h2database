@@ -23,6 +23,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.h2.api.ErrorCode;
 import org.h2.api.TimestampWithTimeZone;
 import org.h2.engine.Constants;
@@ -68,6 +69,10 @@ public class DataType {
     private static final ArrayList<DataType> TYPES = New.arrayList();
     private static final HashMap<String, DataType> TYPES_BY_NAME = New.hashMap();
     private static final HashMap<Integer, DataType> TYPES_BY_VALUE_TYPE = New.hashMap();
+    private static final ConcurrentHashMap<String, DataType> USER_DEFINED_TYPES_BY_CLASS_NAME =
+        new ConcurrentHashMap<String, DataType>();
+    private static final ConcurrentHashMap<Integer, String> USER_DEFINED_TYPE_CLASS_NAMES_BY_ID =
+        new ConcurrentHashMap<Integer, String>();
 
     /**
      * The value type of this data type.
@@ -174,6 +179,8 @@ public class DataType {
      * The number of bytes required for an object.
      */
     public int memory;
+
+    private static int nextUserDefinedValueTypeId = Value.USER_DEFINED;
 
     static {
         Class<?> g;
@@ -388,6 +395,23 @@ public class DataType {
         for (Integer i : TYPES_BY_VALUE_TYPE.keySet()) {
             Value.getOrder(i);
         }
+    }
+
+    public static int registerUserType(Class<? extends ValueUserDefined> valueClass, String name) {
+        int typeId = nextUserDefinedValueTypeId++;
+
+        add(typeId, Types.OTHER, "Object", createString(false), new String[] { name }, 24);
+        USER_DEFINED_TYPES_BY_CLASS_NAME.put(valueClass.getName(), getDataType(typeId));
+        USER_DEFINED_TYPE_CLASS_NAMES_BY_ID.put(typeId, valueClass.getName());
+        return typeId;
+    }
+
+    public static void unregisterUserType(Class<? extends ValueUserDefined> valueClass, String name) {
+        DataType dt = TYPES_BY_NAME.get(name);
+        TYPES_BY_NAME.remove(name);
+        TYPES_BY_VALUE_TYPE.remove(dt.type);
+        USER_DEFINED_TYPE_CLASS_NAMES_BY_ID.remove(dt.type);
+        USER_DEFINED_TYPES_BY_CLASS_NAME.remove(valueClass.getName());
     }
 
     private static void add(int type, int sqlType, String jdbc,
@@ -763,8 +787,13 @@ public class DataType {
             return ResultSet.class.getName();
         case Value.GEOMETRY:
             return GEOMETRY_CLASS_NAME;
-        default:
-            throw DbException.throwInternalError("type="+type);
+        default: {
+                String clsName = USER_DEFINED_TYPE_CLASS_NAMES_BY_ID.get(type);
+                if (clsName != null)
+                    return clsName;
+
+                throw DbException.throwInternalError("type=" + type);
+            }
         }
     }
 
@@ -971,6 +1000,10 @@ public class DataType {
         } else if (LocalDateTimeUtils.isOffsetDateTime(x)) {
             return Value.TIMESTAMP_TZ;
         } else {
+            DataType dt = USER_DEFINED_TYPES_BY_CLASS_NAME.get(x.getName());
+            if (dt != null) {
+                return dt.type;
+            }
             return Value.JAVA_OBJECT;
         }
     }

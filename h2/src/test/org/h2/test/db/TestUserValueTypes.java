@@ -21,6 +21,7 @@ import org.h2.util.StringUtils;
 import org.h2.value.Value;
 import org.h2.value.ValueJavaObject;
 import org.h2.value.ValueNull;
+import org.h2.value.ValueUserDefined;
 
 /**
  * Test for user defined value types.
@@ -198,6 +199,11 @@ public class TestUserValueTypes extends TestBase {
                     throw DbException.get(ErrorCode.DATA_CONVERSION_ERROR_1);
                 }
             }
+        }
+
+        @Override
+        public Class<? extends ValueUserDefined> getValueClass() {
+            return ComplexNumber.class;
         }
 
         /**

@@ -197,6 +197,10 @@ public abstract class Value {
      */
     public abstract int getType();
 
+    public boolean isUserDefinedType() {
+        return false;
+    }
+
     /**
      * Get the precision.
      *
@@ -552,9 +556,15 @@ public abstract class Value {
             return this;
         }
 
-        boolean isUserDefined = targetType >= USER_DEFINED;
+        boolean isTargetUserDefined = targetType >= USER_DEFINED;
 
-        if (isUserDefined) {
+        if (isTargetUserDefined) {
+            // We suppose that user defined types are able to handle
+            // comparisons between each other w/o explicit conversions
+            if (isUserDefinedType()) {
+                return this;
+            }
+
             // There's no method to find user value type by id,
             // will introduce it - this is just a concept
             UserValueType t = database.findUserValueType(Integer.toString(targetType));

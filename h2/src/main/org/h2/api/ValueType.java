@@ -7,6 +7,7 @@ package org.h2.api;
 
 import org.h2.store.DataHandler;
 import org.h2.value.Value;
+import org.h2.value.ValueUserDefined;
 
 import java.util.ArrayList;
 
@@ -20,4 +21,6 @@ public interface ValueType {
     void init(DataHandler dataHandler, ArrayList<String> params);
 
     Value convert(Value value);
+
+    Class<? extends ValueUserDefined> getValueClass();
 }

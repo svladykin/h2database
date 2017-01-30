@@ -22,7 +22,6 @@ import org.h2.value.DataType;
  * @author apaschenko
  */
 public class CreateUserValueType extends DefineCommand {
-
     private String name;
     private String className;
     private ArrayList<String> params;
@@ -89,6 +88,8 @@ public class CreateUserValueType extends DefineCommand {
         }
 
         int id = getObjectId();
+
+        DataType.registerUserType(type.getValueClass(), name);
 
         UserValueType userValueType = new UserValueType(db, id, name, type, params);
 

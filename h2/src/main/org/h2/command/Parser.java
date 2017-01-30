@@ -4249,7 +4249,6 @@ public class Parser {
         }
         column.setComment(comment);
         column.setOriginalSQL(original);
-        column.setValueType(userValueType != null ? userValueType.getValueType() : null);
         return column;
     }
 
