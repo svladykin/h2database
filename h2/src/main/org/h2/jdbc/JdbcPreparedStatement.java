@@ -490,7 +490,9 @@ public class JdbcPreparedStatement extends JdbcStatement implements
                 setParameter(parameterIndex, ValueNull.INSTANCE);
             } else {
                 Value v = DataType.convertToValue(conn.getSession(), x, type);
-                setParameter(parameterIndex, v.convertTo(type));
+                // Given type is SQL type, thus not a user defined value type,
+                // therefore, we don't attempt non built-in type conversions
+                setParameter(parameterIndex, v.convertTo(type, null));
             }
         } catch (Exception e) {
             throw logAndConvert(e);

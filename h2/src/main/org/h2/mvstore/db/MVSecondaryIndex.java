@@ -97,7 +97,7 @@ public class MVSecondaryIndex extends BaseIndex implements MVIndex {
             int sourceId;
             @Override
             public int compareTo(Source o) {
-                int comp = value.compareTo(o.value, compareMode);
+                int comp = value.compareTo(o.value, compareMode, database);
                 if (comp == 0) {
                     comp = sourceId - o.sourceId;
                 }
@@ -319,7 +319,7 @@ public class MVSecondaryIndex extends BaseIndex implements MVIndex {
             int idx = c.getColumnId();
             Value v = r.getValue(idx);
             if (v != null) {
-                array[i] = v.convertTo(c.getType());
+                array[i] = v.convertTo(c.getType(), c.getTable().getDatabase());
             }
         }
         array[keyColumns - 1] = ValueLong.get(r.getKey());

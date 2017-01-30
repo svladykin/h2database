@@ -40,7 +40,7 @@ class AggregateDataHistogram extends AggregateData {
     }
 
     @Override
-    Value getValue(Database database, int dataType, boolean distinct) {
+    Value getValue(final Database database, int dataType, boolean distinct) {
         if (distinct) {
             count = 0;
             groupDistinct(database, dataType);
@@ -58,11 +58,11 @@ class AggregateDataHistogram extends AggregateData {
             public int compare(ValueArray v1, ValueArray v2) {
                 Value a1 = v1.getList()[0];
                 Value a2 = v2.getList()[0];
-                return a1.compareTo(a2, compareMode);
+                return a1.compareTo(a2, compareMode, database);
             }
         });
         Value v = ValueArray.get(values);
-        return v.convertTo(dataType);
+        return v.convertTo(dataType, database);
     }
 
     private void groupDistinct(Database database, int dataType) {

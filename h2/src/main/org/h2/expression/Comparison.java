@@ -260,8 +260,8 @@ public class Comparison extends Condition {
             }
         }
         int dataType = Value.getHigherOrder(left.getType(), right.getType());
-        l = l.convertTo(dataType);
-        r = r.convertTo(dataType);
+        l = l.convertTo(dataType, session.getDatabase());
+        r = r.convertTo(dataType, session.getDatabase());
         boolean result = compareNotNull(database, l, r, compareType);
         return ValueBoolean.get(result);
     }
@@ -301,8 +301,8 @@ public class Comparison extends Condition {
             result = database.compare(l, r) < 0;
             break;
         case SPATIAL_INTERSECTS: {
-            ValueGeometry lg = (ValueGeometry) l.convertTo(Value.GEOMETRY);
-            ValueGeometry rg = (ValueGeometry) r.convertTo(Value.GEOMETRY);
+            ValueGeometry lg = (ValueGeometry) l.convertTo(Value.GEOMETRY, database);
+            ValueGeometry rg = (ValueGeometry) r.convertTo(Value.GEOMETRY, database);
             result = lg.intersectsBoundingBox(rg);
             break;
         }

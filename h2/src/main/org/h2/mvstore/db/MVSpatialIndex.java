@@ -225,7 +225,7 @@ public class MVSpatialIndex extends BaseIndex implements SpatialIndex, MVIndex {
         if (v == ValueNull.INSTANCE) {
             return new SpatialKey(row.getKey());
         }
-        Geometry g = ((ValueGeometry) v.convertTo(Value.GEOMETRY)).getGeometryNoCopy();
+        Geometry g = ((ValueGeometry) v.convertTo(Value.GEOMETRY, null)).getGeometryNoCopy();
         Envelope env = g.getEnvelopeInternal();
         return new SpatialKey(row.getKey(),
                 (float) env.getMinX(), (float) env.getMaxX(),

@@ -12,6 +12,7 @@ import java.util.Arrays;
 import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.geom.CoordinateSequenceFilter;
 import com.vividsolutions.jts.geom.PrecisionModel;
+import org.h2.engine.Database;
 import org.h2.message.DbException;
 import org.h2.util.StringUtils;
 import com.vividsolutions.jts.geom.Envelope;
@@ -272,11 +273,11 @@ public class ValueGeometry extends Value {
     }
 
     @Override
-    public Value convertTo(int targetType) {
+    public Value convertTo(int targetType, Database database) {
         if (targetType == Value.JAVA_OBJECT) {
             return this;
         }
-        return super.convertTo(targetType);
+        return super.convertTo(targetType, database);
     }
 
     /**

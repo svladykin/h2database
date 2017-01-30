@@ -20,7 +20,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import org.h2.api.ErrorCode;
 import org.h2.engine.Constants;
+import org.h2.engine.Database;
 import org.h2.engine.SysProperties;
+import org.h2.engine.UserValueType;
 import org.h2.message.DbException;
 import org.h2.store.DataHandler;
 import org.h2.tools.SimpleResultSet;
@@ -165,6 +167,9 @@ public abstract class Value {
      * The value type for TIMESTAMP WITH TIME ZONE values.
      */
     public static final int TIMESTAMP_TZ = 24;
+
+    // All types with ids 100 and on are treated as user defined
+    public static final int USER_DEFINED = 100;
 
     /**
      * The number of value types.
@@ -523,17 +528,40 @@ public abstract class Value {
     }
 
     /**
-     * Compare a value to the specified type.
+     * Convert a value to the specified built-in type.
      *
      * @param targetType the type of the returned value
      * @return the converted value
      */
-    public Value convertTo(int targetType) {
+    Value convertTo(int targetType) {
+        return convertTo(targetType, null);
+    }
+
+    /**
+     * Convert a value to the specified type, including user defined value types (Java classes based).
+     *
+     * @param targetType the type of the returned value
+     * @param database database to refer for user defined value types to. May be {@code null}
+     * if the type is built-in.
+     * @return the converted value
+     */
+    public Value convertTo(int targetType, Database database) {
         // converting NULL is done in ValueNull
         // converting BLOB to CLOB and vice versa is done in ValueLob
         if (getType() == targetType) {
             return this;
         }
+
+        boolean isUserDefined = targetType >= USER_DEFINED;
+
+        if (isUserDefined) {
+            // There's no method to find user value type by id,
+            // will introduce it - this is just a concept
+            UserValueType t = database.findUserValueType(Integer.toString(targetType));
+
+            return t.getValueType().convert(this);
+        }
+
         try {
             // decimal conversion
             switch (targetType) {
@@ -1000,10 +1028,11 @@ public abstract class Value {
      *
      * @param v the other value
      * @param mode the compare mode
+     * @param database database
      * @return 0 if both values are equal, -1 if the other value is smaller, and
      *         1 otherwise
      */
-    public final int compareTo(Value v, CompareMode mode) {
+    public final int compareTo(Value v, CompareMode mode, Database database) {
         if (this == v) {
             return 0;
         }
@@ -1016,7 +1045,7 @@ public abstract class Value {
             return compareSecure(v, mode);
         }
         int t2 = Value.getHigherOrder(getType(), v.getType());
-        return convertTo(t2).compareSecure(v.convertTo(t2), mode);
+        return convertTo(t2, database).compareSecure(v.convertTo(t2, database), mode);
     }
 
     public int getScale() {

@@ -124,7 +124,7 @@ public class TestOverflow extends TestBase {
     }
 
     private void add(long l) {
-        values.add(ValueString.get("" + l).convertTo(dataType));
+        values.add(ValueString.get("" + l).convertTo(dataType, null));
     }
 
 }

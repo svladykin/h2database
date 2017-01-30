@@ -23,7 +23,6 @@ import java.util.TimeZone;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.h2.api.ErrorCode;
-import org.h2.api.ValueType;
 import org.h2.command.Command;
 import org.h2.command.Parser;
 import org.h2.engine.Constants;
@@ -152,7 +151,6 @@ public class Function extends Expression implements FunctionCall {
     private int dataType, scale;
     private long precision = PRECISION_UNKNOWN;
     private int displaySize;
-    private ValueType valueType;
     private final Database database;
 
     static {
@@ -943,7 +941,7 @@ public class Function extends Expression implements FunctionCall {
             break;
         case CAST:
         case CONVERT: {
-            v0 = valueType != null ? valueType.convert(v0) : v0.convertTo(dataType);
+            v0 = v0.convertTo(dataType, session.getDatabase());
             Mode mode = database.getMode();
             v0 = v0.convertScale(mode.convertOnlyToSmallerScale, scale);
             v0 = v0.convertPrecision(getPrecision(), false);
@@ -973,7 +971,7 @@ public class Function extends Expression implements FunctionCall {
             if (v0 == ValueNull.INSTANCE) {
                 result = getNullOrValue(session, args, values, 1);
             }
-            result = convertResult(result);
+            result = convertResult(result, session.getDatabase());
             break;
         }
         case CASEWHEN: {
@@ -984,7 +982,7 @@ public class Function extends Expression implements FunctionCall {
             } else {
                 v = getNullOrValue(session, args, values, 1);
             }
-            result = v.convertTo(dataType);
+            result = v.convertTo(dataType, session.getDatabase());
             break;
         }
         case DECODE: {
@@ -1001,7 +999,7 @@ public class Function extends Expression implements FunctionCall {
             }
             Value v = index < 0 ? ValueNull.INSTANCE :
                     getNullOrValue(session, args, values, index);
-            result = v.convertTo(dataType);
+            result = v.convertTo(dataType, session.getDatabase());
             break;
         }
         case NVL2: {
@@ -1011,7 +1009,7 @@ public class Function extends Expression implements FunctionCall {
             } else {
                 v = getNullOrValue(session, args, values, 1);
             }
-            result = v.convertTo(dataType);
+            result = v.convertTo(dataType, session.getDatabase());
             break;
         }
         case COALESCE: {
@@ -1019,7 +1017,7 @@ public class Function extends Expression implements FunctionCall {
             for (int i = 0; i < args.length; i++) {
                 Value v = getNullOrValue(session, args, values, i);
                 if (!(v == ValueNull.INSTANCE)) {
-                    result = v.convertTo(dataType);
+                    result = v.convertTo(dataType, session.getDatabase());
                     break;
                 }
             }
@@ -1031,7 +1029,7 @@ public class Function extends Expression implements FunctionCall {
             for (int i = 0; i < args.length; i++) {
                 Value v = getNullOrValue(session, args, values, i);
                 if (!(v == ValueNull.INSTANCE)) {
-                    v = v.convertTo(dataType);
+                    v = v.convertTo(dataType, session.getDatabase());
                     if (result == ValueNull.INSTANCE) {
                         result = v;
                     } else {
@@ -1083,7 +1081,7 @@ public class Function extends Expression implements FunctionCall {
                 then = args[args.length - 1];
             }
             Value v = then == null ? ValueNull.INSTANCE : then.getValue(session);
-            result = v.convertTo(dataType);
+            result = v.convertTo(dataType, session.getDatabase());
             break;
         }
         case ARRAY_GET: {
@@ -1138,8 +1136,8 @@ public class Function extends Expression implements FunctionCall {
         return result;
     }
 
-    private Value convertResult(Value v) {
-        return v.convertTo(dataType);
+    private Value convertResult(Value v, Database database) {
+        return v.convertTo(dataType, database);
     }
 
     private static boolean cancelStatement(Session session, int targetSessionId) {
@@ -2295,7 +2293,6 @@ public class Function extends Expression implements FunctionCall {
         precision = col.getPrecision();
         displaySize = col.getDisplaySize();
         scale = col.getScale();
-        valueType = col.getValueType();
     }
 
     @Override

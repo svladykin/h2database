@@ -48,17 +48,17 @@ class AggregateDataDefault extends AggregateData {
         switch (aggregateType) {
         case Aggregate.SUM:
             if (value == null) {
-                value = v.convertTo(dataType);
+                value = v.convertTo(dataType, database);
             } else {
-                v = v.convertTo(value.getType());
+                v = v.convertTo(value.getType(), database);
                 value = value.add(v);
             }
             break;
         case Aggregate.AVG:
             if (value == null) {
-                value = v.convertTo(DataType.getAddProofType(dataType));
+                value = v.convertTo(DataType.getAddProofType(dataType), database);
             } else {
-                v = v.convertTo(value.getType());
+                v = v.convertTo(value.getType(), database);
                 value = value.add(v);
             }
             break;
@@ -91,7 +91,7 @@ class AggregateDataDefault extends AggregateData {
             break;
         }
         case Aggregate.BOOL_AND:
-            v = v.convertTo(Value.BOOLEAN);
+            v = v.convertTo(Value.BOOLEAN, database);
             if (value == null) {
                 value = v;
             } else {
@@ -100,7 +100,7 @@ class AggregateDataDefault extends AggregateData {
             }
             break;
         case Aggregate.BOOL_OR:
-            v = v.convertTo(Value.BOOLEAN);
+            v = v.convertTo(Value.BOOLEAN, database);
             if (value == null) {
                 value = v;
             } else {
@@ -110,16 +110,16 @@ class AggregateDataDefault extends AggregateData {
             break;
         case Aggregate.BIT_AND:
             if (value == null) {
-                value = v.convertTo(dataType);
+                value = v.convertTo(dataType, database);
             } else {
-                value = ValueLong.get(value.getLong() & v.getLong()).convertTo(dataType);
+                value = ValueLong.get(value.getLong() & v.getLong()).convertTo(dataType, database);
             }
             break;
         case Aggregate.BIT_OR:
             if (value == null) {
-                value = v.convertTo(dataType);
+                value = v.convertTo(dataType, database);
             } else {
-                value = ValueLong.get(value.getLong() | v.getLong()).convertTo(dataType);
+                value = ValueLong.get(value.getLong() | v.getLong()).convertTo(dataType, database);
             }
             break;
         default:
@@ -146,7 +146,7 @@ class AggregateDataDefault extends AggregateData {
             break;
         case Aggregate.AVG:
             if (value != null) {
-                v = divide(value, count);
+                v = divide(value, count, database);
             }
             break;
         case Aggregate.STDDEV_POP: {
@@ -180,16 +180,16 @@ class AggregateDataDefault extends AggregateData {
         default:
             DbException.throwInternalError("type=" + aggregateType);
         }
-        return v == null ? ValueNull.INSTANCE : v.convertTo(dataType);
+        return v == null ? ValueNull.INSTANCE : v.convertTo(dataType, database);
     }
 
-    private static Value divide(Value a, long by) {
+    private static Value divide(Value a, long by, Database database) {
         if (by == 0) {
             return ValueNull.INSTANCE;
         }
         int type = Value.getHigherOrder(a.getType(), Value.LONG);
-        Value b = ValueLong.get(by).convertTo(type);
-        a = a.convertTo(type).divide(b);
+        Value b = ValueLong.get(by).convertTo(type, database);
+        a = a.convertTo(type, database).divide(b);
         return a;
     }
 

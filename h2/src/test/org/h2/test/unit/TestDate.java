@@ -87,31 +87,31 @@ public class TestDate extends TestBase {
         assertTrue(d1.equals(d1));
         assertTrue(d1.equals(d1b));
         assertTrue(d1b.equals(d1));
-        assertEquals(0, d1.compareTo(d1b, null));
-        assertEquals(0, d1b.compareTo(d1, null));
+        assertEquals(0, d1.compareTo(d1b, null, null));
+        assertEquals(0, d1b.compareTo(d1, null, null));
         ValueDate d2 = ValueDate.parse("2002-02-02");
         assertFalse(d1.equals(d2));
         assertFalse(d2.equals(d1));
-        assertEquals(-1, d1.compareTo(d2, null));
-        assertEquals(1, d2.compareTo(d1, null));
+        assertEquals(-1, d1.compareTo(d2, null, null));
+        assertEquals(1, d2.compareTo(d1, null, null));
 
         // can't convert using java.util.Date
         assertEquals(
                 Integer.MAX_VALUE + "-12-31 00:00:00.0",
                 ValueDate.parse(Integer.MAX_VALUE + "-12-31").
-                convertTo(Value.TIMESTAMP).getString());
+                convertTo(Value.TIMESTAMP, null).getString());
         assertEquals(
                 Integer.MIN_VALUE + "-12-31 00:00:00.0",
                 ValueDate.parse(Integer.MIN_VALUE + "-12-31").
-                convertTo(Value.TIMESTAMP).getString());
+                convertTo(Value.TIMESTAMP, null).getString());
         assertEquals(
                 "00:00:00",
                 ValueDate.parse(Integer.MAX_VALUE + "-12-31").
-                convertTo(Value.TIME).getString());
+                convertTo(Value.TIME, null).getString());
         assertEquals(
                 "00:00:00",
                 ValueDate.parse(Integer.MIN_VALUE + "-12-31").
-                convertTo(Value.TIME).getString());
+                convertTo(Value.TIME, null).getString());
     }
 
     private void testValueTime() {
@@ -156,25 +156,25 @@ public class TestDate extends TestBase {
         assertTrue(t1.equals(t1));
         assertTrue(t1.equals(t1b));
         assertTrue(t1b.equals(t1));
-        assertEquals(0, t1.compareTo(t1b, null));
-        assertEquals(0, t1b.compareTo(t1, null));
+        assertEquals(0, t1.compareTo(t1b, null, null));
+        assertEquals(0, t1b.compareTo(t1, null, null));
         ValueTime t2 = ValueTime.parse("22:22:22");
         assertFalse(t1.equals(t2));
         assertFalse(t2.equals(t1));
         assertEquals("33:33:33", t1.add(t2).getString());
         assertEquals("33:33:33", t1.multiply(ValueInt.get(4)).subtract(t1).getString());
-        assertEquals(-1, t1.compareTo(t2, null));
-        assertEquals(1, t2.compareTo(t1, null));
+        assertEquals(-1, t1.compareTo(t2, null, null));
+        assertEquals(1, t2.compareTo(t1, null, null));
 
         // can't convert using java.util.Date
         assertEquals(
                 "1969-12-31 23:00:00.0",
                 ValueTime.parse("-1:00:00").
-                convertTo(Value.TIMESTAMP).getString());
+                convertTo(Value.TIMESTAMP, null).getString());
         assertEquals(
                 "1970-01-01",
                 ValueTime.parse("-1:00:00").
-                convertTo(Value.DATE).getString());
+                convertTo(Value.DATE, null).getString());
     }
 
     private void testValueTimestampWithTimezone() {
@@ -244,13 +244,13 @@ public class TestDate extends TestBase {
         assertTrue(t1.equals(t1));
         assertTrue(t1.equals(t1b));
         assertTrue(t1b.equals(t1));
-        assertEquals(0, t1.compareTo(t1b, null));
-        assertEquals(0, t1b.compareTo(t1, null));
+        assertEquals(0, t1.compareTo(t1b, null, null));
+        assertEquals(0, t1b.compareTo(t1, null, null));
         ValueTimestamp t2 = ValueTimestamp.parse("2002-02-02 02:02:02.222");
         assertFalse(t1.equals(t2));
         assertFalse(t2.equals(t1));
-        assertEquals(-1, t1.compareTo(t2, null));
-        assertEquals(1, t2.compareTo(t1, null));
+        assertEquals(-1, t1.compareTo(t2, null, null));
+        assertEquals(1, t2.compareTo(t1, null, null));
         t1 = ValueTimestamp.parse("2001-01-01 01:01:01.123456789");
         assertEquals("2001-01-01 01:01:01.123456789",
                 t1.getString());
@@ -457,10 +457,10 @@ public class TestDate extends TestBase {
     private void testDateTimeUtils() {
         ValueTimestamp ts1 = ValueTimestamp.parse("-999-08-07 13:14:15.16");
         ValueTimestamp ts2 = ValueTimestamp.parse("19999-08-07 13:14:15.16");
-        ValueTime t1 = (ValueTime) ts1.convertTo(Value.TIME);
-        ValueTime t2 = (ValueTime) ts2.convertTo(Value.TIME);
-        ValueDate d1 = (ValueDate) ts1.convertTo(Value.DATE);
-        ValueDate d2 = (ValueDate) ts2.convertTo(Value.DATE);
+        ValueTime t1 = (ValueTime) ts1.convertTo(Value.TIME, null);
+        ValueTime t2 = (ValueTime) ts2.convertTo(Value.TIME, null);
+        ValueDate d1 = (ValueDate) ts1.convertTo(Value.DATE, null);
+        ValueDate d2 = (ValueDate) ts2.convertTo(Value.DATE, null);
         assertEquals("-999-08-07 13:14:15.16", ts1.getString());
         assertEquals("-999-08-07", d1.getString());
         assertEquals("13:14:15.16", t1.getString());

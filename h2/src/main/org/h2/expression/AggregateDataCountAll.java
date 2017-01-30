@@ -31,7 +31,7 @@ class AggregateDataCountAll extends AggregateData {
             throw DbException.throwInternalError();
         }
         Value v = ValueLong.get(count);
-        return v == null ? ValueNull.INSTANCE : v.convertTo(dataType);
+        return v == null ? ValueNull.INSTANCE : v.convertTo(dataType, database);
     }
 
 }

@@ -100,7 +100,7 @@ public class TableFunction extends Function {
                 if (v == ValueNull.INSTANCE) {
                     list[i] = new Value[0];
                 } else {
-                    ValueArray array = (ValueArray) v.convertTo(Value.ARRAY);
+                    ValueArray array = (ValueArray) v.convertTo(Value.ARRAY, session.getDatabase());
                     Value[] l = array.getList();
                     list[i] = l;
                     rows = Math.max(rows, l.length);

@@ -291,14 +291,14 @@ public class TestValue extends TestBase {
 
         UUID origUUID = UUID.fromString(uuidStr);
         ValueJavaObject valObj = ValueJavaObject.getNoCopy(origUUID, null, null);
-        Value valUUID = valObj.convertTo(Value.UUID);
+        Value valUUID = valObj.convertTo(Value.UUID, null);
         assertTrue(valUUID instanceof ValueUuid);
         assertTrue(valUUID.getString().equals(uuidStr));
         assertTrue(valUUID.getObject().equals(origUUID));
 
         ValueJavaObject voString = ValueJavaObject.getNoCopy(
                 new String("This is not a ValueUuid object"), null, null);
-        assertThrows(DbException.class, voString).convertTo(Value.UUID);
+        assertThrows(DbException.class, voString).convertTo(Value.UUID, null);
     }
 
     private void testModulusDouble() {

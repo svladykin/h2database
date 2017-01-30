@@ -135,7 +135,7 @@ public class SpatialTreeIndex extends BaseIndex implements SpatialIndex {
         if (v == ValueNull.INSTANCE) {
             return null;
         }
-        Geometry g = ((ValueGeometry) v.convertTo(Value.GEOMETRY)).getGeometryNoCopy();
+        Geometry g = ((ValueGeometry) v.convertTo(Value.GEOMETRY, null)).getGeometryNoCopy();
         Envelope env = g.getEnvelopeInternal();
         return new SpatialKey(row.getKey(),
                 (float) env.getMinX(), (float) env.getMaxX(),

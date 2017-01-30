@@ -33,7 +33,7 @@ public class ConditionNot extends Condition {
         if (v == ValueNull.INSTANCE) {
             return v;
         }
-        return v.convertTo(Value.BOOLEAN).negate();
+        return v.convertTo(Value.BOOLEAN, session.getDatabase()).negate();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ConditionNot extends Condition {
             if (v == ValueNull.INSTANCE) {
                 return ValueExpression.getNull();
             }
-            return ValueExpression.get(v.convertTo(Value.BOOLEAN).negate());
+            return ValueExpression.get(v.convertTo(Value.BOOLEAN, session.getDatabase()).negate());
         }
         condition = expr;
         return this;

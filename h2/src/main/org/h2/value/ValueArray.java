@@ -111,7 +111,7 @@ public class ValueArray extends Value {
         for (int i = 0; i < len; i++) {
             Value v1 = values[i];
             Value v2 = v.values[i];
-            int comp = v1.compareTo(v2, mode);
+            int comp = v1.compareTo(v2, mode, database);
             if (comp != 0) {
                 return comp;
             }

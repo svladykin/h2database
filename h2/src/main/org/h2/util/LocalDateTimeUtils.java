@@ -421,7 +421,7 @@ public class LocalDateTimeUtils {
      */
     public static Object valueToLocalTime(Value value) {
         try {
-            return LOCAL_TIME_OF_NANO.invoke(null, ((ValueTime) value.convertTo(Value.TIME)).getNanos());
+            return LOCAL_TIME_OF_NANO.invoke(null, ((ValueTime) value.convertTo(Value.TIME, null)).getNanos());
         } catch (IllegalAccessException e) {
             throw DbException.convert(e);
         } catch (InvocationTargetException e) {
