@@ -81,4 +81,8 @@ public class CreateTableData {
      */
     public boolean isHidden;
 
+    /**
+     * The effective number of columns, defined by the largest column id.
+     */
+    public int columnIdCount;
 }

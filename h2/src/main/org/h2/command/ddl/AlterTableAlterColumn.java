@@ -300,9 +300,9 @@ public class AlterTableAlterColumn extends SchemaCommand {
         } else if (type == CommandInterface.ALTER_TABLE_ADD_COLUMN) {
             int position;
             if (addBefore != null) {
-                position = table.getColumn(addBefore).getColumnId();
+                position = table.getColumn(addBefore).getColumnPos();
             } else if (addAfter != null) {
-                position = table.getColumn(addAfter).getColumnId() + 1;
+                position = table.getColumn(addAfter).getColumnPos() + 1;
             } else {
                 position = columns.length;
             }
@@ -310,7 +310,7 @@ public class AlterTableAlterColumn extends SchemaCommand {
                 newColumns.add(position++, column);
             }
         } else if (type == CommandInterface.ALTER_TABLE_ALTER_COLUMN_CHANGE_TYPE) {
-            int position = oldColumn.getColumnId();
+            int position = oldColumn.getColumnPos();
             newColumns.remove(position);
             newColumns.add(position, newColumn);
         }

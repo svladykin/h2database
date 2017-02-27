@@ -18,6 +18,7 @@ import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.Table;
 import org.h2.table.TableFilter;
+import org.h2.util.JdbcUtils;
 import org.h2.value.Value;
 import org.h2.value.ValueGeometry;
 import org.h2.value.ValueNull;
@@ -55,13 +56,27 @@ public class IndexCursor implements Cursor {
         this.index = index;
         this.table = index.getTable();
         Column[] columns = table.getColumns();
-        indexColumns = new IndexColumn[columns.length];
+        indexColumns = new IndexColumn[table.getColumnIdCount()];
         IndexColumn[] idxCols = index.getIndexColumns();
         if (idxCols != null) {
             for (int i = 0, len = columns.length; i < len; i++) {
                 int idx = index.getColumnIndex(columns[i]);
                 if (idx >= 0) {
                     indexColumns[i] = idxCols[idx];
+                }
+            }
+        }
+
+        if (JdbcUtils.systemColumnsHandler != null) {
+            Column[] sysColumns = JdbcUtils.systemColumnsHandler.getSystemColumns(table);
+            if (sysColumns != null) {
+                for(Column sysColumn : sysColumns) {
+                    int sysColId = sysColumn.getColumnId();
+
+                    int idx = index.getColumnIndex(sysColumn);
+                    if (idx >= 0) {
+                        indexColumns[sysColId] = idxCols[idx];
+                    }
                 }
             }
         }

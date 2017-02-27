@@ -23,6 +23,7 @@ import javax.naming.Context;
 import javax.sql.DataSource;
 import org.h2.api.ErrorCode;
 import org.h2.api.JavaObjectSerializer;
+import org.h2.api.SystemColumnsHandler;
 import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.store.DataHandler;
@@ -37,6 +38,11 @@ public class JdbcUtils {
      * The serializer to use.
      */
     public static JavaObjectSerializer serializer;
+
+    /**
+     * The system columns handler to use.
+     */
+    public static SystemColumnsHandler systemColumnsHandler;
 
     private static final String[] DRIVERS = {
         "h2:", "org.h2.Driver",
@@ -113,6 +119,15 @@ public class JdbcUtils {
         if (clazz != null) {
             try {
                 serializer = (JavaObjectSerializer) loadUserClass(clazz).newInstance();
+            } catch (Exception e) {
+                throw DbException.convert(e);
+            }
+        }
+
+        String clsName = SysProperties.SYSTEM_COLUMNS_HANDLER;
+        if (clsName != null) {
+            try {
+                systemColumnsHandler = (SystemColumnsHandler) loadUserClass(clsName).newInstance();
             } catch (Exception e) {
                 throw DbException.convert(e);
             }

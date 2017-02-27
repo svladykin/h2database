@@ -26,6 +26,7 @@ import org.h2.message.DbException;
 import org.h2.result.Row;
 import org.h2.result.SearchRow;
 import org.h2.result.SortOrder;
+import org.h2.util.JdbcUtils;
 import org.h2.util.New;
 import org.h2.util.StatementBuilder;
 import org.h2.util.StringUtils;
@@ -197,7 +198,7 @@ public class TableFilter implements ColumnResolver {
             item1.setIndex(table.getScanIndex(s, null, filters, filter, sortOrder));
             item1.cost = item1.getIndex().getCost(s, null, filters, filter, sortOrder);
         }
-        int len = table.getColumns().length;
+        int len = table.getColumnIdCount();
         int[] masks = new int[len];
         for (IndexCondition condition : indexConditions) {
             if (condition.isEvaluatable()) {
@@ -1018,6 +1019,9 @@ public class TableFilter implements ColumnResolver {
      */
     @Override
     public Column[] getSystemColumns() {
+        if (JdbcUtils.systemColumnsHandler != null) {
+            return JdbcUtils.systemColumnsHandler.getSystemColumns(table);
+        }
         if (!session.getDatabase().getMode().systemColumns) {
             return null;
         }

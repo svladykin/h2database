@@ -68,6 +68,7 @@ public class Column {
     private int displaySize;
     private Table table;
     private String name;
+    private int columnPos;
     private int columnId;
     private boolean nullable = true;
     private Expression defaultExpression;
@@ -194,6 +195,20 @@ public class Column {
      */
     public void setTable(Table table, int columnId) {
         this.table = table;
+        this.columnPos = columnId;
+        this.columnId = columnId;
+    }
+
+    /**
+     * Set the table and column id.
+     *
+     * @param table the table
+     * @param columnPos the column position
+     * @param columnId the column index
+     */
+    public void setTable(Table table, int columnPos, int columnId) {
+        this.table = table;
+        this.columnPos = columnPos;
         this.columnId = columnId;
     }
 
@@ -220,8 +235,15 @@ public class Column {
         this.defaultExpression = defaultExpression;
     }
 
+    public int getColumnPos() {
+        return columnPos;
+    }
+
     public int getColumnId() {
         return columnId;
+    }
+    public void setColumnId(int columnId) {
+        this.columnId = columnId;
     }
 
     public String getSQL() {

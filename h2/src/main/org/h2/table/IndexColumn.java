@@ -6,6 +6,7 @@
 package org.h2.table;
 
 import org.h2.result.SortOrder;
+import org.h2.util.JdbcUtils;
 
 /**
  * This represents a column item of an index. This is required because some
@@ -71,6 +72,14 @@ public class IndexColumn {
      */
     public static void mapColumns(IndexColumn[] indexColumns, Table table) {
         for (IndexColumn col : indexColumns) {
+            if (JdbcUtils.systemColumnsHandler != null) {
+                Column sysColumn = JdbcUtils.systemColumnsHandler.getSystemColumn(table, col.columnName);
+                if (sysColumn != null) {
+                    col.column = sysColumn;
+                    continue;
+                }
+            }
+
             col.column = table.getColumn(col.columnName);
         }
     }
