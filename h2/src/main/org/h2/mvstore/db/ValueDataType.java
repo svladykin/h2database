@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2014 H2 Group. Multiple-Licensed under the MPL 2.0,
+ * Copyright 2004-2017 H2 Group. Multiple-Licensed under the MPL 2.0,
  * and the EPL 1.0 (http://h2database.com/html/license.html).
  * Initial Developer: H2 Group
  */
@@ -22,6 +22,7 @@ import org.h2.mvstore.type.DataType;
 import org.h2.result.SortOrder;
 import org.h2.store.DataHandler;
 import org.h2.tools.SimpleResultSet;
+import org.h2.util.JdbcUtils;
 import org.h2.value.CompareMode;
 import org.h2.value.Value;
 import org.h2.value.ValueArray;
@@ -67,6 +68,7 @@ public class ValueDataType implements DataType {
     private static final int STRING_0_31 = 68;
     private static final int BYTES_0_31 = 100;
     private static final int SPATIAL_KEY_2D = 132;
+    private static final int CUSTOM_DATA_TYPE = 133;
 
     final DataHandler handler;
     final CompareMode compareMode;
@@ -421,6 +423,17 @@ public class ValueDataType implements DataType {
             break;
         }
         default:
+            if (JdbcUtils.customDataTypesHandler != null) {
+                if (JdbcUtils.customDataTypesHandler.getDataTypeById(type) != null) {
+                    byte[] b = v.getBytesNoCopy();
+                    buff.put((byte)CUSTOM_DATA_TYPE).
+                        putVarInt(type).
+                        putVarInt(b.length).
+                        put(b);
+                    return;
+                }
+            }
+
             DbException.throwInternalError("type=" + v.getType());
         }
     }
@@ -583,6 +596,17 @@ public class ValueDataType implements DataType {
         }
         case SPATIAL_KEY_2D:
             return getSpatialDataType().read(buff);
+        case CUSTOM_DATA_TYPE: {
+            int customType = readVarInt(buff);
+            int len = readVarInt(buff);
+            byte[] b = DataUtils.newBytes(len);
+            buff.get(b, 0, len);
+            Value v = ValueBytes.getNoCopy(b);
+            if (JdbcUtils.customDataTypesHandler != null) {
+                return JdbcUtils.customDataTypesHandler.convert(v, customType);
+            }
+            return v;
+        }
         default:
             if (type >= INT_0_15 && type < INT_0_15 + 16) {
                 return ValueInt.get(type - INT_0_15);

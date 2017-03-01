@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2014 H2 Group. Multiple-Licensed under the MPL 2.0,
+ * Copyright 2004-2017 H2 Group. Multiple-Licensed under the MPL 2.0,
  * and the EPL 1.0 (http://h2database.com/html/license.html).
  * Initial Developer: H2 Group
  */
@@ -528,6 +528,13 @@ public class Transfer {
             }
             break;
         default:
+            if (JdbcUtils.customDataTypesHandler != null) {
+                DataType dt = JdbcUtils.customDataTypesHandler.getDataTypeById(type);
+                if (dt != null) {
+                    writeBytes(JdbcUtils.customDataTypesHandler.convert(v, Value.BYTES).getBytesNoCopy());
+                    break;
+                }
+            }
             throw DbException.get(ErrorCode.CONNECTION_BROKEN_1, "type=" + type);
         }
     }
@@ -703,6 +710,12 @@ public class Transfer {
             }
             return ValueGeometry.get(readString());
         default:
+            if (JdbcUtils.customDataTypesHandler != null) {
+                DataType dt = JdbcUtils.customDataTypesHandler.getDataTypeById(type);
+                if (dt != null) {
+                    return JdbcUtils.customDataTypesHandler.convert(ValueBytes.getNoCopy(readBytes()), type);
+                }
+            }
             throw DbException.get(ErrorCode.CONNECTION_BROKEN_1, "type=" + type);
         }
     }

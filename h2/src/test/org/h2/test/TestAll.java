@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2014 H2 Group. Multiple-Licensed under the MPL 2.0,
+ * Copyright 2004-2017 H2 Group. Multiple-Licensed under the MPL 2.0,
  * and the EPL 1.0 (http://h2database.com/html/license.html).
  * Initial Developer: H2 Group
  */
@@ -86,6 +86,7 @@ import org.h2.test.jdbc.TestBatchUpdates;
 import org.h2.test.jdbc.TestCallableStatement;
 import org.h2.test.jdbc.TestCancel;
 import org.h2.test.jdbc.TestConcurrentConnectionUsage;
+import org.h2.test.jdbc.TestCustomDataTypesHandler;
 import org.h2.test.jdbc.TestDatabaseEventListener;
 import org.h2.test.jdbc.TestDriver;
 import org.h2.test.jdbc.TestJavaObject;
@@ -734,6 +735,7 @@ kill -9 `jps -l | grep "org.h2.test." | cut -d " " -f 1`
         addTest(new TestTransactionIsolation());
         addTest(new TestUpdatableResultSet());
         addTest(new TestZloty());
+        addTest(new TestCustomDataTypesHandler());
 
         // jdbcx
         addTest(new TestConnectionPool());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2014 H2 Group. Multiple-Licensed under the MPL 2.0,
+ * Copyright 2004-2017 H2 Group. Multiple-Licensed under the MPL 2.0,
  * and the EPL 1.0 (http://h2database.com/html/license.html).
  * Initial Developer: H2 Group
  */
@@ -776,7 +776,13 @@ public class DataType {
         if (type == Value.UNKNOWN) {
             throw DbException.get(ErrorCode.UNKNOWN_DATA_TYPE_1, "?");
         }
-        DataType dt = TYPES_BY_VALUE_TYPE.get(type);
+        DataType dt = null;
+        if (type < TYPES_BY_VALUE_TYPE.size()) {
+            dt = TYPES_BY_VALUE_TYPE.get(type);
+        }
+        if (dt == null && JdbcUtils.customDataTypesHandler != null) {
+            dt = JdbcUtils.customDataTypesHandler.getDataTypeById(type);
+        }
         if (dt == null) {
             dt = TYPES_BY_VALUE_TYPE.get(Value.NULL);
         }
@@ -1103,7 +1109,11 @@ public class DataType {
      * @return the data type object
      */
     public static DataType getTypeByName(String s) {
-        return TYPES_BY_NAME.get(s);
+        DataType result = TYPES_BY_NAME.get(s);
+        if (result == null && JdbcUtils.customDataTypesHandler != null) {
+            result = JdbcUtils.customDataTypesHandler.getDataTypeByName(s);
+        }
+        return result;
     }
 
     /**

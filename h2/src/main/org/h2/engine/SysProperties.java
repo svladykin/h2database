@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2014 H2 Group. Multiple-Licensed under the MPL 2.0,
+ * Copyright 2004-2017 H2 Group. Multiple-Licensed under the MPL 2.0,
  * and the EPL 1.0 (http://h2database.com/html/license.html).
  * Initial Developer: H2 Group
  */
@@ -521,6 +521,16 @@ public class SysProperties {
      */
     public static final String JAVA_OBJECT_SERIALIZER =
             Utils.getProperty("h2.javaObjectSerializer", null);
+
+    /**
+     * System property <code>h2.customDataTypesHandler</code>
+     * (default: null).<br />
+     * The CustomDataTypesHandler class name that is used
+     * to provide support for user defined custom data types.
+     * It must be the same on client and server to work correctly.
+     */
+    public static final String CUSTOM_DATA_TYPES_HANDLER =
+            Utils.getProperty("h2.customDataTypesHandler", null);
 
     private static final String H2_BASE_DIR = "h2.baseDir";
 
