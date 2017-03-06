@@ -778,10 +778,7 @@ public class DataType {
         if (type == Value.UNKNOWN) {
             throw DbException.get(ErrorCode.UNKNOWN_DATA_TYPE_1, "?");
         }
-        DataType dt = null;
-        if (type < TYPES_BY_VALUE_TYPE.size()) {
-            dt = TYPES_BY_VALUE_TYPE.get(type);
-        }
+        DataType dt = TYPES_BY_VALUE_TYPE.get(type);
         if (dt == null && JdbcUtils.customDataTypesHandler != null) {
             dt = JdbcUtils.customDataTypesHandler.getDataTypeById(type);
         }

@@ -531,11 +531,8 @@ public class Transfer {
             break;
         default:
             if (JdbcUtils.customDataTypesHandler != null) {
-                DataType dt = JdbcUtils.customDataTypesHandler.getDataTypeById(type);
-                if (dt != null) {
-                    writeBytes(JdbcUtils.customDataTypesHandler.convert(v, Value.BYTES).getBytesNoCopy());
-                    break;
-                }
+                writeBytes(JdbcUtils.customDataTypesHandler.convert(v, Value.BYTES).getBytesNoCopy());
+                break;
             }
             throw DbException.get(ErrorCode.CONNECTION_BROKEN_1, "type=" + type);
         }
@@ -714,10 +711,7 @@ public class Transfer {
             return ValueGeometry.get(readString());
         default:
             if (JdbcUtils.customDataTypesHandler != null) {
-                DataType dt = JdbcUtils.customDataTypesHandler.getDataTypeById(type);
-                if (dt != null) {
-                    return JdbcUtils.customDataTypesHandler.convert(ValueBytes.getNoCopy(readBytes()), type);
-                }
+                return JdbcUtils.customDataTypesHandler.convert(ValueBytes.getNoCopy(readBytes()), type);
             }
             throw DbException.get(ErrorCode.CONNECTION_BROKEN_1, "type=" + type);
         }

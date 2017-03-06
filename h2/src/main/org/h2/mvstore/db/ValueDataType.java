@@ -431,16 +431,13 @@ public class ValueDataType implements DataType {
         }
         default:
             if (JdbcUtils.customDataTypesHandler != null) {
-                if (JdbcUtils.customDataTypesHandler.getDataTypeById(type) != null) {
-                    byte[] b = v.getBytesNoCopy();
-                    buff.put((byte)CUSTOM_DATA_TYPE).
-                        putVarInt(type).
-                        putVarInt(b.length).
-                        put(b);
-                    return;
-                }
+                byte[] b = v.getBytesNoCopy();
+                buff.put((byte)CUSTOM_DATA_TYPE).
+                    putVarInt(type).
+                    putVarInt(b.length).
+                    put(b);
+                break;
             }
-
             DbException.throwInternalError("type=" + v.getType());
         }
     }
@@ -606,15 +603,14 @@ public class ValueDataType implements DataType {
         case SPATIAL_KEY_2D:
             return getSpatialDataType().read(buff);
         case CUSTOM_DATA_TYPE: {
-            int customType = readVarInt(buff);
-            int len = readVarInt(buff);
-            byte[] b = DataUtils.newBytes(len);
-            buff.get(b, 0, len);
-            Value v = ValueBytes.getNoCopy(b);
             if (JdbcUtils.customDataTypesHandler != null) {
-                return JdbcUtils.customDataTypesHandler.convert(v, customType);
+                int customType = readVarInt(buff);
+                int len = readVarInt(buff);
+                byte[] b = DataUtils.newBytes(len);
+                buff.get(b, 0, len);
+                return JdbcUtils.customDataTypesHandler.convert(ValueBytes.getNoCopy(b), customType);
             }
-            return v;
+            throw DbException.get(ErrorCode.UNKNOWN_DATA_TYPE_1, "No CustomDataTypesHandler has been set up");
         }
         default:
             if (type >= INT_0_15 && type < INT_0_15 + 16) {

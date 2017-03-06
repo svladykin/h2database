@@ -137,7 +137,7 @@ public class TestCustomDataTypesHandler extends TestBase {
         public final static int COMPLEX_DATA_TYPE_ID = 1000;
 
         /** Order for complex number data type */
-        public final static int COMPLEX_DATA_TYPE_ORDER = 100;
+        public final static int COMPLEX_DATA_TYPE_ORDER = 100_000;
 
         /** Cached DataType instance for complex number */
         public final DataType complexDataType;
@@ -205,7 +205,8 @@ public class TestCustomDataTypesHandler extends TestBase {
             if (type == COMPLEX_DATA_TYPE_ID) {
                 return COMPLEX_DATA_TYPE_ORDER;
             }
-            return 0;
+            throw DbException.get(
+                    ErrorCode.UNKNOWN_DATA_TYPE_1, "type:" + type);
         }
 
         /** Constructs data type instance for complex number type */
