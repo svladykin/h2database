@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -40,11 +41,13 @@ import org.h2.message.DbException;
 import org.h2.result.Row;
 import org.h2.result.SearchRow;
 import org.h2.result.SortOrder;
+import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.SubQueryInfo;
 import org.h2.table.Table;
 import org.h2.table.TableBase;
 import org.h2.table.TableFilter;
+import org.h2.table.TableType;
 import org.h2.test.TestBase;
 import org.h2.util.DoneFuture;
 import org.h2.util.New;
@@ -75,6 +78,7 @@ public class TestTableEngines extends TestBase {
         testSubQueryInfo();
         testEarlyFilter();
         testEngineParams();
+        testSchemaEngineParams();
         testSimpleQuery();
         testMultiColumnTreeSetIndex();
         testBatchedJoin();
@@ -107,6 +111,13 @@ public class TestTableEngines extends TestBase {
                 EndlessTableEngine.createTableData.tableEngineParams.get(0));
         assertEquals("param2",
                 EndlessTableEngine.createTableData.tableEngineParams.get(1));
+        stat.execute("CREATE TABLE t2(id int, name varchar) WITH \"param1\", \"param2\"");
+        assertEquals(2,
+            EndlessTableEngine.createTableData.tableEngineParams.size());
+        assertEquals("param1",
+            EndlessTableEngine.createTableData.tableEngineParams.get(0));
+        assertEquals("param2",
+            EndlessTableEngine.createTableData.tableEngineParams.get(1));
         conn.close();
         if (!config.memory) {
             // Test serialization of table parameters
@@ -120,6 +131,24 @@ public class TestTableEngines extends TestBase {
                     EndlessTableEngine.createTableData.tableEngineParams.get(1));
             conn.close();
         }
+        deleteDb("tableEngine");
+    }
+
+    private void testSchemaEngineParams() throws SQLException {
+        deleteDb("tableEngine");
+        Connection conn = getConnection("tableEngine");
+        Statement stat = conn.createStatement();
+        stat.execute("CREATE SCHEMA s1 WITH \"param1\", \"param2\"");
+
+        stat.execute("CREATE TABLE s1.t1(id int, name varchar) ENGINE \"" +
+                EndlessTableEngine.class.getName() + '\"');
+        assertEquals(2,
+            EndlessTableEngine.createTableData.tableEngineParams.size());
+        assertEquals("param1",
+            EndlessTableEngine.createTableData.tableEngineParams.get(0));
+        assertEquals("param2",
+            EndlessTableEngine.createTableData.tableEngineParams.get(1));
+        conn.close();
         deleteDb("tableEngine");
     }
 
@@ -260,6 +289,8 @@ public class TestTableEngines extends TestBase {
         checkResults(6, dataSet, stat,
                 "select * from t order by a", null, new RowComparator(0));
         checkResults(6, dataSet, stat,
+                "select * from t order by a desc", null, new RowComparator(true, 0));
+        checkResults(6, dataSet, stat,
                 "select * from t order by b, c", null, new RowComparator(1, 2));
         checkResults(6, dataSet, stat,
                 "select * from t order by c, a", null, new RowComparator(2, 0));
@@ -343,7 +374,7 @@ public class TestTableEngines extends TestBase {
                 return "0".equals(b) && a != null && a < 2;
             }
         }, null);
-
+        conn.close();
         deleteDb("tableEngine");
     }
 
@@ -360,6 +391,7 @@ public class TestTableEngines extends TestBase {
                 + "(select id from QUERY_EXPR_TEST)");
         stat.executeQuery("select 1 from QUERY_EXPR_TEST_NO n "
                 + "where exists(select 1 from QUERY_EXPR_TEST y where y.id = n.id)");
+        conn.close();
         deleteDb("testQueryExpressionFlag");
     }
 
@@ -399,6 +431,7 @@ public class TestTableEngines extends TestBase {
         checkPlan(stat, "select * from (select (select id from test_plan "
                 + "where name = 'z') from dual)",
                 "MY_NAME_INDEX");
+        conn.close();
         deleteDb("testSubQueryInfo");
     }
 
@@ -467,6 +500,7 @@ public class TestTableEngines extends TestBase {
             forceJoinOrder(stat, false);
             TreeSetIndex.exec.shutdownNow();
         }
+        conn.close();
         deleteDb("testBatchedJoin");
     }
 
@@ -901,7 +935,8 @@ public class TestTableEngines extends TestBase {
 
                 @Override
                 public double getCost(Session session, int[] masks,
-                        TableFilter[] filters, int filter, SortOrder sortOrder) {
+                        TableFilter[] filters, int filter, SortOrder sortOrder,
+                        HashSet<Column> allColumnsSet) {
                     return 0;
                 }
 
@@ -1003,8 +1038,8 @@ public class TestTableEngines extends TestBase {
             }
 
             @Override
-            public String getTableType() {
-                return EXTERNAL_TABLE_ENGINE;
+            public TableType getTableType() {
+                return TableType.EXTERNAL_TABLE_ENGINE;
             }
 
             @Override
@@ -1157,10 +1192,11 @@ public class TestTableEngines extends TestBase {
                 IndexColumn.wrap(getColumns()), IndexType.createScan(false)) {
             @Override
             public double getCost(Session session, int[] masks,
-                    TableFilter[] filters, int filter, SortOrder sortOrder) {
+                    TableFilter[] filters, int filter, SortOrder sortOrder,
+                    HashSet<Column> allColumnsSet) {
                 doTests(session);
                 return getCostRangeIndex(masks, getRowCount(session), filters,
-                        filter, sortOrder, true);
+                        filter, sortOrder, true, allColumnsSet);
             }
         };
 
@@ -1253,8 +1289,8 @@ public class TestTableEngines extends TestBase {
         }
 
         @Override
-        public String getTableType() {
-            return EXTERNAL_TABLE_ENGINE;
+        public TableType getTableType() {
+            return TableType.EXTERNAL_TABLE_ENGINE;
         }
 
         @Override
@@ -1341,7 +1377,8 @@ public class TestTableEngines extends TestBase {
         }
 
         @Override
-        public IndexLookupBatch createLookupBatch(final TableFilter filter) {
+        public IndexLookupBatch createLookupBatch(TableFilter[] filters, int f) {
+            final TableFilter filter = filters[f];
             assert0(filter.getMasks() != null || "scan".equals(getName()), "masks");
             final int preferredSize = preferredBatchSize;
             if (preferredSize == 0) {
@@ -1505,9 +1542,11 @@ public class TestTableEngines extends TestBase {
 
         @Override
         public double getCost(Session session, int[] masks,
-                TableFilter[] filters, int filter, SortOrder sortOrder) {
+                TableFilter[] filters, int filter, SortOrder sortOrder,
+                HashSet<Column> allColumnsSet) {
             doTests(session);
-            return getCostRangeIndex(masks, set.size(), filters, filter, sortOrder, false);
+            return getCostRangeIndex(masks, set.size(), filters, filter,
+                    sortOrder, false, allColumnsSet);
         }
 
         @Override
@@ -1603,8 +1642,15 @@ public class TestTableEngines extends TestBase {
      */
     private static class RowComparator implements Comparator<List<Object>> {
         private int[] cols;
+        private boolean descending;
 
         public RowComparator(int... cols) {
+            this.descending = false;
+            this.cols = cols;
+        }
+
+        public RowComparator(boolean descending, int... cols) {
+            this.descending = descending;
             this.cols = cols;
         }
 
@@ -1616,17 +1662,27 @@ public class TestTableEngines extends TestBase {
                 Comparable<Object> o1 = (Comparable<Object>) row1.get(col);
                 Comparable<Object> o2 = (Comparable<Object>) row2.get(col);
                 if (o1 == null) {
-                    return o2 == null ? 0 : -1;
+                    return applyDescending(o2 == null ? 0 : -1);
                 }
                 if (o2 == null) {
-                    return 1;
+                    return applyDescending(1);
                 }
                 int res = o1.compareTo(o2);
                 if (res != 0) {
-                    return res;
+                    return applyDescending(res);
                 }
             }
             return 0;
+        }
+
+        private int applyDescending(int v) {
+            if (!descending) {
+                return v;
+            }
+            if (v == 0) {
+                return v;
+            }
+            return -v;
         }
     }
 

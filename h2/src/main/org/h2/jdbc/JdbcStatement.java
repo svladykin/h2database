@@ -23,7 +23,7 @@ import org.h2.util.New;
 /**
  * Represents a statement.
  */
-public class JdbcStatement extends TraceObject implements Statement {
+public class JdbcStatement extends TraceObject implements Statement, JdbcStatementBackwardsCompat {
 
     protected JdbcConnection conn;
     protected SessionInterface session;
@@ -929,22 +929,18 @@ public class JdbcStatement extends TraceObject implements Statement {
     /**
      * [Not supported]
      */
-/*## Java 1.7 ##
     @Override
     public void closeOnCompletion() {
         // not supported
     }
-//*/
 
     /**
      * [Not supported]
      */
-/*## Java 1.7 ##
     @Override
     public boolean isCloseOnCompletion() {
         return true;
     }
-//*/
 
     // =============================================================
 
@@ -1067,10 +1063,14 @@ public class JdbcStatement extends TraceObject implements Statement {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        if (isWrapperFor(iface)) {
-            return (T) this;
+        try {
+            if (isWrapperFor(iface)) {
+                return (T) this;
+            }
+            throw DbException.getInvalidValueException("iface", iface);
+        } catch (Exception e) {
+            throw logAndConvert(e);
         }
-        throw DbException.getInvalidValueException("iface", iface);
     }
 
     /**

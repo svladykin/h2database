@@ -46,7 +46,7 @@ public class TableView extends Table {
 
     private String querySQL;
     private ArrayList<Table> tables;
-    private String[] columnNames;
+    private Column[] columnTemplates;
     private Query viewQuery;
     private ViewIndex index;
     private boolean recursive;
@@ -59,10 +59,10 @@ public class TableView extends Table {
     private boolean tableExpression;
 
     public TableView(Schema schema, int id, String name, String querySQL,
-            ArrayList<Parameter> params, String[] columnNames, Session session,
+            ArrayList<Parameter> params, Column[] columnTemplates, Session session,
             boolean recursive) {
         super(schema, id, name, false, true);
-        init(querySQL, params, columnNames, session, recursive);
+        init(querySQL, params, columnTemplates, session, recursive);
     }
 
     /**
@@ -78,21 +78,21 @@ public class TableView extends Table {
     public void replace(String querySQL, String[] columnNames, Session session,
             boolean recursive, boolean force) {
         String oldQuerySQL = this.querySQL;
-        String[] oldColumnNames = this.columnNames;
+        Column[] oldColumnTemplates = this.columnTemplates;
         boolean oldRecursive = this.recursive;
-        init(querySQL, null, columnNames, session, recursive);
+        init(querySQL, null, columnTemplates, session, recursive);
         DbException e = recompile(session, force, true);
         if (e != null) {
-            init(oldQuerySQL, null, oldColumnNames, session, oldRecursive);
+            init(oldQuerySQL, null, oldColumnTemplates, session, oldRecursive);
             recompile(session, true, false);
             throw e;
         }
     }
 
     private synchronized void init(String querySQL, ArrayList<Parameter> params,
-            String[] columnNames, Session session, boolean recursive) {
+            Column[] columnTemplates, Session session, boolean recursive) {
         this.querySQL = querySQL;
-        this.columnNames = columnNames;
+        this.columnTemplates = columnTemplates;
         this.recursive = recursive;
         index = new ViewIndex(this, querySQL, params, recursive);
         initColumnsAndTables(session);
@@ -161,13 +161,17 @@ public class TableView extends Table {
             for (int i = 0, count = query.getColumnCount(); i < count; i++) {
                 Expression expr = expressions.get(i);
                 String name = null;
-                if (columnNames != null && columnNames.length > i) {
-                    name = columnNames[i];
+                int type = Value.UNKNOWN;
+                if (columnTemplates != null && columnTemplates.length > i) {
+                    name = columnTemplates[i].getName();
+                    type = columnTemplates[i].getType();
                 }
                 if (name == null) {
                     name = expr.getAlias();
                 }
-                int type = expr.getType();
+                if (type == Value.UNKNOWN) {
+                    type = expr.getType();
+                }
                 long precision = expr.getPrecision();
                 int scale = expr.getScale();
                 int displaySize = expr.getDisplaySize();
@@ -204,10 +208,10 @@ public class TableView extends Table {
             // database
             tables = New.arrayList();
             cols = new Column[0];
-            if (recursive && columnNames != null) {
-                cols = new Column[columnNames.length];
-                for (int i = 0; i < columnNames.length; i++) {
-                    cols[i] = new Column(columnNames[i], Value.STRING);
+            if (recursive && columnTemplates != null) {
+                cols = new Column[columnTemplates.length];
+                for (int i = 0; i < columnTemplates.length; i++) {
+                    cols[i] = columnTemplates[i].getClone();
                 }
                 index.setRecursive(true);
                 createException = null;
@@ -235,7 +239,8 @@ public class TableView extends Table {
 
     @Override
     public PlanItem getBestPlanItem(Session session, int[] masks,
-            TableFilter[] filters, int filter, SortOrder sortOrder) {
+            TableFilter[] filters, int filter, SortOrder sortOrder,
+            HashSet<Column> allColumnsSet) {
         final CacheKey cacheKey = new CacheKey(masks, this);
         Map<Object, ViewIndex> indexCache = session.getViewIndexCache(topQuery != null);
         ViewIndex i = indexCache.get(cacheKey);
@@ -244,7 +249,7 @@ public class TableView extends Table {
             indexCache.put(cacheKey, i);
         }
         PlanItem item = new PlanItem();
-        item.cost = i.getCost(session, masks, filters, filter, sortOrder);
+        item.cost = i.getCost(session, masks, filters, filter, sortOrder, allColumnsSet);
         item.setIndex(i);
         return item;
     }
@@ -318,11 +323,11 @@ public class TableView extends Table {
                 buff.append(c.getSQL());
             }
             buff.append(')');
-        } else if (columnNames != null) {
+        } else if (columnTemplates != null) {
             buff.append('(');
-            for (String n : columnNames) {
+            for (Column c : columnTemplates) {
                 buff.appendExceptFirst(", ");
-                buff.append(n);
+                buff.append(c.getName());
             }
             buff.append(')');
         }
@@ -384,7 +389,7 @@ public class TableView extends Table {
 
     @Override
     public long getRowCount(Session session) {
-        throw DbException.throwInternalError();
+        throw DbException.throwInternalError(toString());
     }
 
     @Override
@@ -399,8 +404,8 @@ public class TableView extends Table {
     }
 
     @Override
-    public String getTableType() {
-        return Table.VIEW;
+    public TableType getTableType() {
+        return TableType.VIEW;
     }
 
     @Override
@@ -439,18 +444,19 @@ public class TableView extends Table {
 
     @Override
     public Index getScanIndex(Session session) {
-        return getBestPlanItem(session, null, null, -1, null).getIndex();
+        return getBestPlanItem(session, null, null, -1, null, null).getIndex();
     }
 
     @Override
     public Index getScanIndex(Session session, int[] masks,
-            TableFilter[] filters, int filter, SortOrder sortOrder) {
+            TableFilter[] filters, int filter, SortOrder sortOrder,
+            HashSet<Column> allColumnsSet) {
         if (createException != null) {
             String msg = createException.getMessage();
             throw DbException.get(ErrorCode.VIEW_IS_INVALID_2,
                     createException, getSQL(), msg);
         }
-        PlanItem item = getBestPlanItem(session, masks, filters, filter, sortOrder);
+        PlanItem item = getBestPlanItem(session, masks, filters, filter, sortOrder, allColumnsSet);
         return item.getIndex();
     }
 
@@ -551,8 +557,30 @@ public class TableView extends Table {
         return 0;
     }
 
-    public int getParameterOffset() {
-        return topQuery == null ? 0 : topQuery.getParameters().size();
+    /**
+     * Get the index of the first parameter.
+     *
+     * @param additionalParameters additional parameters
+     * @return the index of the first parameter
+     */
+    public int getParameterOffset(ArrayList<Parameter> additionalParameters) {
+        int result = topQuery == null ? -1 : getMaxParameterIndex(topQuery.getParameters());
+        if (additionalParameters != null) {
+            result = Math.max(result, getMaxParameterIndex(additionalParameters));
+        }
+        return result + 1;
+    }
+
+    private static int getMaxParameterIndex(ArrayList<Parameter> parameters) {
+        int result = -1;
+        for (Parameter p : parameters) {
+            result = Math.max(result, p.getIndex());
+        }
+        return result;
+    }
+
+    public boolean isRecursive() {
+        return recursive;
     }
 
     @Override
@@ -587,7 +615,7 @@ public class TableView extends Table {
         super.addDependencies(dependencies);
         if (tables != null) {
             for (Table t : tables) {
-                if (!Table.VIEW.equals(t.getTableType())) {
+                if (TableType.VIEW != t.getTableType()) {
                     t.addDependencies(dependencies);
                 }
             }

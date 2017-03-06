@@ -7,9 +7,11 @@ package org.h2.mvstore.db;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 import org.h2.api.ErrorCode;
 import org.h2.engine.Database;
 import org.h2.engine.Session;
@@ -54,7 +56,7 @@ public class MVPrimaryIndex extends BaseIndex {
     private final MVTable mvTable;
     private final String mapName;
     private TransactionMap<Value, Value> dataMap;
-    private long lastKey;
+    private final AtomicLong lastKey = new AtomicLong(0);
     private int mainIndexColumn = -1;
 
     public MVPrimaryIndex(Database db, MVTable table, int id,
@@ -76,7 +78,7 @@ public class MVPrimaryIndex extends BaseIndex {
             dataMap.map.setVolatile(true);
         }
         Value k = dataMap.lastKey();
-        lastKey = k == null ? 0 : k.getLong();
+        lastKey.set(k == null ? 0 : k.getLong());
     }
 
     @Override
@@ -106,7 +108,7 @@ public class MVPrimaryIndex extends BaseIndex {
     public void add(Session session, Row row) {
         if (mainIndexColumn == -1) {
             if (row.getKey() == 0) {
-                row.setKey(++lastKey);
+                row.setKey(lastKey.incrementAndGet());
             }
         } else {
             long c = row.getValue(mainIndexColumn).getLong();
@@ -143,7 +145,11 @@ public class MVPrimaryIndex extends BaseIndex {
         } catch (IllegalStateException e) {
             throw mvTable.convertException(e);
         }
-        lastKey = Math.max(lastKey, row.getKey());
+        // because it's possible to directly update the key using the _rowid_
+        // syntax
+        if (row.getKey() > lastKey.get()) {
+            lastKey.set(row.getKey());
+        }
     }
 
     @Override
@@ -208,6 +214,10 @@ public class MVPrimaryIndex extends BaseIndex {
     public Row getRow(Session session, long key) {
         TransactionMap<Value, Value> map = getMap(session);
         Value v = map.get(ValueLong.get(key));
+        if (v == null) {
+            throw DbException.get(ErrorCode.ROW_NOT_FOUND_IN_PRIMARY_INDEX,
+                    getSQL() + ": " + key);
+        }
         ValueArray array = (ValueArray) v;
         Row row = session.createRow(array.getList(), 0);
         row.setKey(key);
@@ -216,10 +226,11 @@ public class MVPrimaryIndex extends BaseIndex {
 
     @Override
     public double getCost(Session session, int[] masks,
-            TableFilter[] filters, int filter, SortOrder sortOrder) {
+            TableFilter[] filters, int filter, SortOrder sortOrder,
+            HashSet<Column> allColumnsSet) {
         try {
             return 10 * getCostRangeIndex(masks, dataMap.sizeAsLongMax(),
-                    filters, filter, sortOrder, true);
+                    filters, filter, sortOrder, true, allColumnsSet);
         } catch (IllegalStateException e) {
             throw DbException.get(ErrorCode.OBJECT_CLOSED, e);
         }
@@ -264,7 +275,6 @@ public class MVPrimaryIndex extends BaseIndex {
         }
         Value value = map.get(v);
         Entry<Value, Value> e = new DataUtils.MapEntry<Value, Value>(v, value);
-        @SuppressWarnings("unchecked")
         List<Entry<Value, Value>> list = Arrays.asList(e);
         MVStoreCursor c = new MVStoreCursor(session, list.iterator(), v);
         c.next();

@@ -11,7 +11,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Locale;
 import org.h2.test.TestBase;
 import org.h2.tools.SimpleResultSet;
 
@@ -35,6 +37,8 @@ public class TestCompatibilityOracle extends TestBase {
         testTreatEmptyStringsAsNull();
         testDecimalScale();
         testPoundSymbolInColumnName();
+        testToDate();
+        testForbidEmptyInClause();
     }
 
     private void testTreatEmptyStringsAsNull() throws SQLException {
@@ -138,6 +142,56 @@ public class TestCompatibilityOracle extends TestBase {
         assertResult("1", stat, "SELECT ID FROM TEST where U##NAME ='Hello'");
 
         conn.close();
+    }
+
+    private void testToDate() throws SQLException {
+        if (Locale.getDefault() != Locale.ENGLISH) {
+            return;
+        }
+        deleteDb("oracle");
+        Connection conn = getConnection("oracle;MODE=Oracle");
+        Statement stat = conn.createStatement();
+
+        stat.execute("CREATE TABLE DATE_TABLE (ID NUMBER PRIMARY KEY, TEST_VAL TIMESTAMP)");
+        stat.execute("INSERT INTO DATE_TABLE VALUES (1, " +
+                "to_date('31-DEC-9999 23:59:59','DD-MON-RRRR HH24:MI:SS'))");
+        stat.execute("INSERT INTO DATE_TABLE VALUES (2, " +
+                "to_date('01-JAN-0001 00:00:00','DD-MON-RRRR HH24:MI:SS'))");
+
+        assertResultDate("9999-12-31T23:59:59", stat,
+                "SELECT TEST_VAL FROM DATE_TABLE WHERE ID=1");
+        assertResultDate("0001-01-01T00:00:00", stat,
+                "SELECT TEST_VAL FROM DATE_TABLE WHERE ID=2");
+
+        conn.close();
+    }
+
+    private void testForbidEmptyInClause() throws SQLException {
+        deleteDb("oracle");
+        Connection conn = getConnection("oracle;MODE=Oracle");
+        Statement stat = conn.createStatement();
+
+        stat.execute("CREATE TABLE A (ID NUMBER, X VARCHAR2(1))");
+        try {
+            stat.executeQuery("SELECT * FROM A WHERE ID IN ()");
+            fail();
+        } catch (SQLException e) {
+            // expected
+        } finally {
+            conn.close();
+        }
+    }
+
+    private void assertResultDate(String expected, Statement stat, String sql)
+            throws SQLException {
+        SimpleDateFormat iso8601 = new SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss");
+        ResultSet rs = stat.executeQuery(sql);
+        if (rs.next()) {
+            assertEquals(expected, iso8601.format(rs.getTimestamp(1)));
+        } else {
+            assertEquals(expected, null);
+        }
     }
 
     private void assertResult(Object[][] expectedRowsOfValues, Statement stat,

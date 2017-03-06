@@ -1,0 +1,15 @@
+/bin/
+/.settings/
+/.classpath
+/.project
+/dist/
+/build/
+/nbproject/
+/data/
+/error.lock
+/error.txt
+/test.out.txt
+.DS_Store
+/.idea/
+.checkstyle
+/temp/

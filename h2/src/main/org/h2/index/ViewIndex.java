@@ -6,8 +6,11 @@
 package org.h2.index;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
+
 import org.h2.api.ErrorCode;
+import org.h2.command.Parser;
 import org.h2.command.Prepared;
 import org.h2.command.dml.Query;
 import org.h2.command.dml.SelectUnion;
@@ -107,7 +110,7 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
     }
 
     @Override
-    public IndexLookupBatch createLookupBatch(TableFilter filter) {
+    public IndexLookupBatch createLookupBatch(TableFilter[] filters, int filter) {
         if (recursive) {
             // we do not support batching for recursive queries
             return null;
@@ -147,7 +150,8 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
 
     @Override
     public double getCost(Session session, int[] masks,
-            TableFilter[] filters, int filter, SortOrder sortOrder) {
+            TableFilter[] filters, int filter, SortOrder sortOrder,
+            HashSet<Column> allColumnsSet) {
         return recursive ? 1000 : query.getCost();
     }
 
@@ -157,8 +161,9 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
     }
 
     @Override
-    public Cursor findByGeometry(TableFilter filter, SearchRow intersection) {
-        return find(filter.getSession(), null, null, intersection);
+    public Cursor findByGeometry(TableFilter filter, SearchRow first,
+            SearchRow last, SearchRow intersection) {
+        return find(filter.getSession(), first, last, intersection);
     }
 
     private static Query prepareSubQuery(String sql, Session session, int[] masks,
@@ -182,7 +187,10 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
             return new ViewCursor(this, recResult, first, last);
         }
         if (query == null) {
-            query = (Query) createSession.prepare(querySQL, true);
+            Parser parser = new Parser(createSession);
+            parser.setRightsChecked(true);
+            parser.setSuppliedParameterList(originalParameters);
+            query = (Query) parser.prepare(querySQL);
         }
         if (!query.isUnion()) {
             throw DbException.get(ErrorCode.SYNTAX_ERROR_2,
@@ -254,8 +262,7 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
         } else {
             len = 0;
         }
-        int idx = originalParameters == null ? 0 : originalParameters.size();
-        idx += view.getParameterOffset();
+        int idx = view.getParameterOffset(originalParameters);
         for (int i = 0; i < len; i++) {
             int mask = indexMasks[i];
             if ((mask & IndexCondition.EQUALITY) != 0) {
@@ -307,10 +314,11 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
         if (!q.allowGlobalConditions()) {
             return q;
         }
-        int firstIndexParam = originalParameters == null ?
-                0 : originalParameters.size();
-        firstIndexParam += view.getParameterOffset();
-        IntArray paramIndex = new IntArray();
+        int firstIndexParam = view.getParameterOffset(originalParameters);
+        // the column index of each parameter
+        // (for example: paramColumnIndex {0, 0} mean
+        // param[0] is column 0, and param[1] is also column 0)
+        IntArray paramColumnIndex = new IntArray();
         int indexColumnCount = 0;
         for (int i = 0; i < masks.length; i++) {
             int mask = masks[i];
@@ -318,16 +326,18 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
                 continue;
             }
             indexColumnCount++;
-            paramIndex.add(i);
-            if (Integer.bitCount(mask) > 1) {
-                // two parameters for range queries: >= x AND <= y
-                paramIndex.add(i);
+            // the number of parameters depends on the mask;
+            // for range queries it is 2: >= x AND <= y
+            // but bitMask could also be 7 (=, and <=, and >=)
+            int bitCount = Integer.bitCount(mask);
+            for (int j = 0; j < bitCount; j++) {
+                paramColumnIndex.add(i);
             }
         }
-        int len = paramIndex.size();
+        int len = paramColumnIndex.size();
         ArrayList<Column> columnList = New.arrayList();
         for (int i = 0; i < len;) {
-            int idx = paramIndex.get(i);
+            int idx = paramColumnIndex.get(i);
             columnList.add(table.getColumn(idx));
             int mask = masks[idx];
             if ((mask & IndexCondition.EQUALITY) != 0) {

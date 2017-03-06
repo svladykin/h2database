@@ -300,7 +300,7 @@ public class PageDataIndex extends PageIndex {
 
     @Override
     public Cursor findFirstOrLast(Session session, boolean first) {
-        throw DbException.throwInternalError();
+        throw DbException.throwInternalError(toString());
     }
 
     long getLastKey() {
@@ -310,7 +310,8 @@ public class PageDataIndex extends PageIndex {
 
     @Override
     public double getCost(Session session, int[] masks,
-            TableFilter[] filters, int filter, SortOrder sortOrder) {
+            TableFilter[] filters, int filter, SortOrder sortOrder,
+            HashSet<Column> allColumnsSet) {
         long cost = 10 * (tableData.getRowCountApproximation() +
                 Constants.COST_ROW_OFFSET);
         return cost;

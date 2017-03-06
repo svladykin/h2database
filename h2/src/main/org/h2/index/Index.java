@@ -5,6 +5,7 @@
  */
 package org.h2.index;
 
+import java.util.HashSet;
 import org.h2.engine.Session;
 import org.h2.result.Row;
 import org.h2.result.SearchRow;
@@ -84,10 +85,11 @@ public interface Index extends SchemaObject {
      * @param filters all joined table filters
      * @param filter the current table filter index
      * @param sortOrder the sort order
+     * @param allColumnsSet the set of all columns
      * @return the estimated cost
      */
     double getCost(Session session, int[] masks, TableFilter[] filters, int filter,
-            SortOrder sortOrder);
+            SortOrder sortOrder, HashSet<Column> allColumnsSet);
 
     /**
      * Remove the index.
@@ -261,9 +263,10 @@ public interface Index extends SchemaObject {
      * Creates new lookup batch. Note that returned {@link IndexLookupBatch}
      * instance can be used multiple times.
      *
-     * @param filter Table filter.
+     * @param filters the table filters
+     * @param filter the filter index (0, 1,...)
      * @return created batch or {@code null} if batched lookup is not supported
      *         by this index.
      */
-    IndexLookupBatch createLookupBatch(TableFilter filter);
+    IndexLookupBatch createLookupBatch(TableFilter[] filters, int filter);
 }

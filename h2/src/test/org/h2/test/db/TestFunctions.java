@@ -76,6 +76,7 @@ public class TestFunctions extends TestBase implements AggregateFunction {
     @Override
     public void test() throws Exception {
         deleteDb("functions");
+        testIfNull();
         testToDate();
         testToDateException();
         testAddMonths();
@@ -112,6 +113,9 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         testTranslate();
         testGenerateSeries();
         testFileWrite();
+        testThatCurrentTimestampIsSane();
+        testThatCurrentTimestampStaysTheSameWithinATransaction();
+        testThatCurrentTimestampUpdatesOutsideATransaction();
         testAnnotationProcessorsOutput();
 
         deleteDb("functions");
@@ -362,7 +366,7 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         ResultSet rs;
         rs = stat.executeQuery("select * from information_schema.views");
         rs.next();
-        assertTrue(rs.getString("VIEW_DEFINITION").contains("SCHEMA2.FUNC"));
+        assertContains(rs.getString("VIEW_DEFINITION"), "SCHEMA2.FUNC");
 
         stat.execute("drop view test");
         stat.execute("drop schema schema2");
@@ -1288,9 +1292,19 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         } catch (Exception e) {
             assertEquals(DbException.class.getSimpleName(), e.getClass().getSimpleName());
         }
+
+        try {
+            ToDateParser.toDate("1-DEC-0000", "DD-MON-RRRR");
+            fail("Oracle to_date should reject year 0 (ORA-01841)");
+        } catch (Exception e) {
+            // expected
+        }
     }
 
     private void testToDate() throws ParseException {
+        if (Locale.getDefault() != Locale.ENGLISH) {
+            return;
+        }
 
         final int month = Calendar.getInstance().get(Calendar.MONTH);
 
@@ -1400,6 +1414,24 @@ public class TestFunctions extends TestBase implements AggregateFunction {
 
         date = new SimpleDateFormat("yyyy-MM-dd").parse("2013-01-29");
         assertEquals(date, ToDateParser.toDate("113029", "J"));
+
+        date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+                .parse("9999-12-31T23:59:59");
+        assertEquals(date, ToDateParser.toDate("31-DEC-9999 23:59:59",
+                "DD-MON-YYYY HH24:MI:SS"));
+        assertEquals(date, ToDateParser.toDate("31-DEC-9999 23:59:59",
+                "DD-MON-RRRR HH24:MI:SS"));
+
+        SimpleDateFormat ymd = new SimpleDateFormat("yyyy-MM-dd");
+        assertEquals(ymd.parse("0001-03-01"), ToDateParser.toDate("1-MAR-0001", "DD-MON-RRRR"));
+        assertEquals(ymd.parse("9999-03-01"), ToDateParser.toDate("1-MAR-9999", "DD-MON-RRRR"));
+        assertEquals(ymd.parse("2000-03-01"), ToDateParser.toDate("1-MAR-000", "DD-MON-RRRR"));
+        assertEquals(ymd.parse("1999-03-01"), ToDateParser.toDate("1-MAR-099", "DD-MON-RRRR"));
+        assertEquals(ymd.parse("0100-03-01"), ToDateParser.toDate("1-MAR-100", "DD-MON-RRRR"));
+        assertEquals(ymd.parse("2000-03-01"), ToDateParser.toDate("1-MAR-00", "DD-MON-RRRR"));
+        assertEquals(ymd.parse("2049-03-01"), ToDateParser.toDate("1-MAR-49", "DD-MON-RRRR"));
+        assertEquals(ymd.parse("1950-03-01"), ToDateParser.toDate("1-MAR-50", "DD-MON-RRRR"));
+        assertEquals(ymd.parse("1999-03-01"), ToDateParser.toDate("1-MAR-99", "DD-MON-RRRR"));
     }
 
     private static void setMonth(Date date, int month) {
@@ -1516,7 +1548,7 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         expected = expected.substring(0, 1).toUpperCase() + expected.substring(1);
         String spaces = "         ";
         String first9 = (expected + spaces).substring(0, 9);
-        assertResult(first9.toUpperCase(),
+        assertResult(StringUtils.toUpperEnglish(first9),
                 stat, "SELECT TO_CHAR(X, 'DAY') FROM T");
         assertResult(first9,
                 stat, "SELECT TO_CHAR(X, 'Day') FROM T");
@@ -1635,6 +1667,22 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         stat.executeUpdate("INSERT INTO T VALUES (TIMESTAMP '1985-01-01 08:12:34.560')");
         assertResult("19850101", stat, "SELECT TO_CHAR(X, 'YYYYMMDD') FROM T");
 
+        conn.close();
+    }
+    private void testIfNull() throws SQLException {
+        Connection conn = getConnection("functions");
+        Statement stat = conn.createStatement(
+                ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        stat.execute("CREATE TABLE T(f1 double)");
+        stat.executeUpdate("INSERT INTO T VALUES( 1.2 )");
+        stat.executeUpdate("INSERT INTO T VALUES( null )");
+        ResultSet rs = stat.executeQuery("SELECT IFNULL(f1, 0.0) FROM T");
+        ResultSetMetaData metaData = rs.getMetaData();
+        assertEquals("java.lang.Double", metaData.getColumnClassName(1));
+        rs.next();
+        assertEquals("java.lang.Double", rs.getObject(1).getClass().getName());
+        rs.next();
+        assertEquals("java.lang.Double", rs.getObject(1).getClass().getName());
         conn.close();
     }
 
@@ -1960,6 +2008,81 @@ public class TestFunctions extends TestBase implements AggregateFunction {
         } finally {
             System.clearProperty(TestAnnotationProcessor.MESSAGES_KEY);
         }
+    }
+
+    private void testThatCurrentTimestampIsSane() throws SQLException,
+            ParseException {
+        deleteDb("functions");
+
+        Date before = new Date();
+
+        Connection conn = getConnection("functions");
+        conn.setAutoCommit(false);
+        Statement stat = conn.createStatement();
+
+
+        final String formatted;
+        final ResultSet rs = stat.executeQuery(
+                "select to_char(current_timestamp(9), 'YYYY MM DD HH24 MI SS FF3') from dual");
+        rs.next();
+        formatted = rs.getString(1);
+        rs.close();
+
+        Date after = new Date();
+
+        Date parsed = new SimpleDateFormat("y M d H m s S").parse(formatted);
+
+        assertFalse(parsed.before(before));
+        assertFalse(parsed.after(after));
+    }
+
+
+    private void testThatCurrentTimestampStaysTheSameWithinATransaction()
+            throws SQLException, InterruptedException {
+        deleteDb("functions");
+        Connection conn = getConnection("functions");
+        conn.setAutoCommit(false);
+        Statement stat = conn.createStatement();
+
+        Timestamp first;
+        ResultSet rs = stat.executeQuery("select CURRENT_TIMESTAMP from DUAL");
+        rs.next();
+        first = rs.getTimestamp(1);
+        rs.close();
+
+        Thread.sleep(1);
+
+        Timestamp second;
+        rs = stat.executeQuery("select CURRENT_TIMESTAMP from DUAL");
+        rs.next();
+        second = rs.getTimestamp(1);
+        rs.close();
+
+        assertEquals(first, second);
+    }
+
+    private void testThatCurrentTimestampUpdatesOutsideATransaction()
+            throws SQLException, InterruptedException {
+        deleteDb("functions");
+        Connection conn = getConnection("functions");
+        conn.setAutoCommit(true);
+        Statement stat = conn.createStatement();
+
+        Timestamp first;
+        ResultSet rs = stat.executeQuery("select CURRENT_TIMESTAMP from DUAL");
+        rs.next();
+        first = rs.getTimestamp(1);
+        rs.close();
+
+        Thread.sleep(1);
+
+        Timestamp second;
+        rs = stat.executeQuery("select CURRENT_TIMESTAMP from DUAL");
+        rs.next();
+        second = rs.getTimestamp(1);
+        rs.close();
+
+        assertTrue(second.after(first));
     }
 
     private void callCompiledFunction(String functionName) throws SQLException {

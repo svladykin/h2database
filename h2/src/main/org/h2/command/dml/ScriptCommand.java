@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
-
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
 import org.h2.command.Parser;
@@ -53,6 +52,7 @@ import org.h2.schema.TriggerObject;
 import org.h2.table.Column;
 import org.h2.table.PlanItem;
 import org.h2.table.Table;
+import org.h2.table.TableType;
 import org.h2.util.IOUtils;
 import org.h2.util.MathUtils;
 import org.h2.util.StatementBuilder;
@@ -278,7 +278,7 @@ public class ScriptCommand extends ScriptBase {
                     // null for metadata tables
                     continue;
                 }
-                final String tableType = table.getTableType();
+                final TableType tableType = table.getTableType();
                 add(createTableSql, false);
                 final ArrayList<Constraint> constraints = table.getConstraints();
                 if (constraints != null) {
@@ -289,7 +289,7 @@ public class ScriptCommand extends ScriptBase {
                         }
                     }
                 }
-                if (Table.TABLE.equals(tableType)) {
+                if (TableType.TABLE == tableType) {
                     if (table.canGetRowCount()) {
                         String rowcount = "-- " +
                                 table.getRowCountApproximation() +
@@ -389,7 +389,7 @@ public class ScriptCommand extends ScriptBase {
     }
 
     private int generateInsertValues(int count, Table table) throws IOException {
-        PlanItem plan = table.getBestPlanItem(session, null, null, -1, null);
+        PlanItem plan = table.getBestPlanItem(session, null, null, -1, null, null);
         Index index = plan.getIndex();
         Cursor cursor = index.find(session, null, null);
         Column[] columns = table.getColumns();
@@ -467,8 +467,7 @@ public class ScriptCommand extends ScriptBase {
         switch (v.getType()) {
         case Value.BLOB: {
             byte[] bytes = new byte[lobBlockSize];
-            InputStream input = v.getInputStream();
-            try {
+            try (InputStream input = v.getInputStream()) {
                 for (int i = 0;; i++) {
                     StringBuilder buff = new StringBuilder(lobBlockSize * 2);
                     buff.append("INSERT INTO SYSTEM_LOB_STREAM VALUES(" + id +
@@ -481,15 +480,13 @@ public class ScriptCommand extends ScriptBase {
                     String sql = buff.toString();
                     add(sql, true);
                 }
-            } finally {
-                IOUtils.closeSilently(input);
             }
             break;
         }
         case Value.CLOB: {
             char[] chars = new char[lobBlockSize];
-            Reader reader = v.getReader();
-            try {
+
+            try (Reader reader = v.getReader()) {
                 for (int i = 0;; i++) {
                     StringBuilder buff = new StringBuilder(lobBlockSize * 2);
                     buff.append("INSERT INTO SYSTEM_LOB_STREAM VALUES(" + id + ", " + i + ", ");
@@ -502,8 +499,6 @@ public class ScriptCommand extends ScriptBase {
                     String sql = buff.toString();
                     add(sql, true);
                 }
-            } finally {
-                IOUtils.closeSilently(reader);
             }
             break;
         }

@@ -158,15 +158,20 @@ public abstract class Value {
      * The value type for string values with a fixed size.
      */
     public static final int GEOMETRY = 22;
+
     /**
-     * The value type for TIMESTAMP UTC values.
+     * 23 was a short-lived experiment "TIMESTAMP UTC" which has been removed.
      */
-    public static final int TIMESTAMP_UTC = 23;
+
+    /**
+     * The value type for TIMESTAMP WITH TIME ZONE values.
+     */
+    public static final int TIMESTAMP_TZ = 24;
 
     /**
      * The number of value types.
      */
-    public static final int TYPE_COUNT = TIMESTAMP_UTC + 1;
+    public static final int TYPE_COUNT = TIMESTAMP_TZ;
 
     private static SoftReference<Value[]> softCache =
             new SoftReference<Value[]>(null);
@@ -302,15 +307,15 @@ public abstract class Value {
             return 31;
         case TIMESTAMP:
             return 32;
-        case TIMESTAMP_UTC:
-            return 33;
+        case TIMESTAMP_TZ:
+            return 34;
         case BYTES:
             return 40;
         case BLOB:
             return 41;
-        case UUID:
-            return 42;
         case JAVA_OBJECT:
+            return 42;
+        case UUID:
             return 43;
         case GEOMETRY:
             return 44;
@@ -553,7 +558,7 @@ public abstract class Value {
                 case TIME:
                 case DATE:
                 case TIMESTAMP:
-                case TIMESTAMP_UTC:
+                case TIMESTAMP_TZ:
                 case BYTES:
                 case JAVA_OBJECT:
                 case UUID:
@@ -571,7 +576,6 @@ public abstract class Value {
                 case INT:
                     return ValueByte.get(convertToByte(getInt()));
                 case LONG:
-                case TIMESTAMP_UTC:
                     return ValueByte.get(convertToByte(getLong()));
                 case DECIMAL:
                     return ValueByte.get(convertToByte(convertToLong(getBigDecimal())));
@@ -581,6 +585,9 @@ public abstract class Value {
                     return ValueByte.get(convertToByte(convertToLong(getFloat())));
                 case BYTES:
                     return ValueByte.get((byte) Integer.parseInt(getString(), 16));
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -593,7 +600,6 @@ public abstract class Value {
                 case INT:
                     return ValueShort.get(convertToShort(getInt()));
                 case LONG:
-                case TIMESTAMP_UTC:
                     return ValueShort.get(convertToShort(getLong()));
                 case DECIMAL:
                     return ValueShort.get(convertToShort(convertToLong(getBigDecimal())));
@@ -603,6 +609,9 @@ public abstract class Value {
                     return ValueShort.get(convertToShort(convertToLong(getFloat())));
                 case BYTES:
                     return ValueShort.get((short) Integer.parseInt(getString(), 16));
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -615,7 +624,6 @@ public abstract class Value {
                 case SHORT:
                     return ValueInt.get(getShort());
                 case LONG:
-                case TIMESTAMP_UTC:
                     return ValueInt.get(convertToInt(getLong()));
                 case DECIMAL:
                     return ValueInt.get(convertToInt(convertToLong(getBigDecimal())));
@@ -625,6 +633,9 @@ public abstract class Value {
                     return ValueInt.get(convertToInt(convertToLong(getFloat())));
                 case BYTES:
                     return ValueInt.get((int) Long.parseLong(getString(), 16));
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -652,8 +663,9 @@ public abstract class Value {
                     }
                     return ValueLong.get(Long.parseLong(getString(), 16));
                 }
-                case TIMESTAMP_UTC:
-                    return ValueLong.get(getLong());
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -669,7 +681,6 @@ public abstract class Value {
                 case INT:
                     return ValueDecimal.get(BigDecimal.valueOf(getInt()));
                 case LONG:
-                case TIMESTAMP_UTC:
                     return ValueDecimal.get(BigDecimal.valueOf(getLong()));
                 case DOUBLE: {
                     double d = getDouble();
@@ -688,6 +699,9 @@ public abstract class Value {
                     // better rounding behavior than BigDecimal.valueOf(f)
                     return ValueDecimal.get(new BigDecimal(Float.toString(f)));
                 }
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -702,12 +716,14 @@ public abstract class Value {
                 case INT:
                     return ValueDouble.get(getInt());
                 case LONG:
-                case TIMESTAMP_UTC:
                     return ValueDouble.get(getLong());
                 case DECIMAL:
                     return ValueDouble.get(getBigDecimal().doubleValue());
                 case FLOAT:
                     return ValueDouble.get(getFloat());
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -722,12 +738,14 @@ public abstract class Value {
                 case INT:
                     return ValueFloat.get(getInt());
                 case LONG:
-                case TIMESTAMP_UTC:
                     return ValueFloat.get(getLong());
                 case DECIMAL:
                     return ValueFloat.get(getBigDecimal().floatValue());
                 case DOUBLE:
                     return ValueFloat.get((float) getDouble());
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -741,9 +759,9 @@ public abstract class Value {
                 case TIMESTAMP:
                     return ValueDate.fromDateValue(
                             ((ValueTimestamp) this).getDateValue());
-                case TIMESTAMP_UTC:
-                    return ValueDate.fromMillis(
-                            ((ValueTimestampUtc) this).getUtcDateTimeMillis());
+                case TIMESTAMP_TZ:
+                    return ValueDate.fromDateValue(
+                            ((ValueTimestampTimeZone) this).getDateValue());
                 }
                 break;
             }
@@ -756,9 +774,9 @@ public abstract class Value {
                 case TIMESTAMP:
                     return ValueTime.fromNanos(
                             ((ValueTimestamp) this).getTimeNanos());
-                case TIMESTAMP_UTC:
-                    return ValueTime.fromMillis(
-                            ((ValueTimestampUtc) this).getUtcDateTimeMillis());
+                case TIMESTAMP_TZ:
+                    return ValueTime.fromNanos(
+                            ((ValueTimestampTimeZone) this).getTimeNanos());
                 }
                 break;
             }
@@ -770,35 +788,10 @@ public abstract class Value {
                 case DATE:
                     return ValueTimestamp.fromDateValueAndNanos(
                             ((ValueDate) this).getDateValue(), 0);
-                case TIMESTAMP_UTC:
-                    return ValueTimestamp.fromMillisNanos(
-                            ((ValueTimestampUtc) this).getUtcDateTimeMillis(),
-                            ((ValueTimestampUtc) this).getNanosSinceLastMillis());
-                }
-                break;
-            }
-            case TIMESTAMP_UTC: {
-                switch (getType()) {
-                case BOOLEAN:
-                    return ValueTimestampUtc.fromNanos(getBoolean().booleanValue() ? 1 : 0);
-                case BYTE:
-                    return ValueTimestampUtc.fromNanos(getByte());
-                case SHORT:
-                    return ValueTimestampUtc.fromNanos(getShort());
-                case INT:
-                    return ValueTimestampUtc.fromNanos(getInt());
-                case LONG:
-                    return ValueTimestampUtc.fromNanos(getLong());
-                case DECIMAL:
-                    return ValueTimestampUtc.fromNanos(getBigDecimal().longValue());
-                case FLOAT:
-                    return ValueTimestampUtc.fromNanos((long) getFloat());
-                case DOUBLE:
-                    return ValueTimestampUtc.fromNanos((long) getDouble());
-                case TIMESTAMP:
-                    return ValueTimestampUtc.fromMillisNanos(
-                            ((ValueTimestamp) this).getTimestamp().getTime(),
-                            ((ValueTimestamp) this).getTimestamp().getNanos());
+                case TIMESTAMP_TZ:
+                    return ValueTimestamp.fromDateValueAndNanos(
+                            ((ValueTimestampTimeZone) this).getDateValue(),
+                            ((ValueTimestampTimeZone) this).getTimeNanos());
                 }
                 break;
             }
@@ -841,6 +834,9 @@ public abstract class Value {
                             (byte) x
                     });
                 }
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -850,6 +846,9 @@ public abstract class Value {
                 case BLOB:
                     return ValueJavaObject.getNoCopy(
                             null, getBytesNoCopy(), getDataHandler());
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -858,6 +857,9 @@ public abstract class Value {
                 case BYTES:
                     return ValueLobDb.createSmallLob(
                             Value.BLOB, getBytesNoCopy());
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
                 break;
             }
@@ -865,9 +867,22 @@ public abstract class Value {
                 switch (getType()) {
                 case BYTES:
                     return ValueUuid.get(getBytesNoCopy());
+                case JAVA_OBJECT:
+                    Object object = JdbcUtils.deserialize(getBytesNoCopy(),
+                            getDataHandler());
+                    if (object instanceof java.util.UUID) {
+                        java.util.UUID uuid = (java.util.UUID) object;
+                        return ValueUuid.get(uuid.getMostSignificantBits(),
+                                uuid.getLeastSignificantBits());
+                    }
+                    throw DbException.get(ErrorCode.DATA_CONVERSION_ERROR_1, getString());
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
+                break;
             }
-            case GEOMETRY:
+            case GEOMETRY: {
                 switch (getType()) {
                 case BYTES:
                     return ValueGeometry.get(getBytesNoCopy());
@@ -876,7 +891,12 @@ public abstract class Value {
                     if (DataType.isGeometry(object)) {
                         return ValueGeometry.getFromGeometry(object);
                     }
+                case TIMESTAMP_TZ:
+                    throw DbException.get(
+                            ErrorCode.DATA_CONVERSION_ERROR_1, getString());
                 }
+                break;
+            }
             }
             // conversion by parsing the string value
             String s = getString();
@@ -915,8 +935,8 @@ public abstract class Value {
                 return ValueDate.parse(s.trim());
             case TIMESTAMP:
                 return ValueTimestamp.parse(s.trim());
-            case TIMESTAMP_UTC:
-                return ValueTimestampUtc.parse(s.trim());
+            case TIMESTAMP_TZ:
+                return ValueTimestampTimeZone.parse(s.trim());
             case BYTES:
                 return ValueBytes.getNoCopy(
                         StringUtils.convertHexToBytes(s.trim()));

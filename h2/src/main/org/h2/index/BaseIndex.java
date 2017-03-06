@@ -5,15 +5,12 @@
  */
 package org.h2.index;
 
-import java.util.Arrays;
 import java.util.HashSet;
-
 import org.h2.api.ErrorCode;
 import org.h2.engine.Constants;
 import org.h2.engine.DbObject;
 import org.h2.engine.Mode;
 import org.h2.engine.Session;
-import org.h2.expression.ExpressionVisitor;
 import org.h2.message.DbException;
 import org.h2.message.Trace;
 import org.h2.result.Row;
@@ -25,7 +22,6 @@ import org.h2.table.IndexColumn;
 import org.h2.table.Table;
 import org.h2.table.TableFilter;
 import org.h2.util.MathUtils;
-import org.h2.util.New;
 import org.h2.util.StatementBuilder;
 import org.h2.util.StringUtils;
 import org.h2.value.Value;
@@ -145,7 +141,7 @@ public abstract class BaseIndex extends SchemaObjectBase implements Index {
      */
     @Override
     public Cursor findNext(Session session, SearchRow higherThan, SearchRow last) {
-        throw DbException.throwInternalError();
+        throw DbException.throwInternalError(toString());
     }
 
     /**
@@ -160,11 +156,12 @@ public abstract class BaseIndex extends SchemaObjectBase implements Index {
      * @param filter the current table filter index
      * @param sortOrder the sort order
      * @param isScanIndex whether this is a "table scan" index
+     * @param allColumnsSet the set of all columns
      * @return the estimated cost
      */
     protected final long getCostRangeIndex(int[] masks, long rowCount,
             TableFilter[] filters, int filter, SortOrder sortOrder,
-            boolean isScanIndex) {
+            boolean isScanIndex, HashSet<Column> allColumnsSet) {
         rowCount += Constants.COST_ROW_OFFSET;
         int totalSelectivity = 0;
         long rowsCost = rowCount;
@@ -244,27 +241,28 @@ public abstract class BaseIndex extends SchemaObjectBase implements Index {
             }
         }
         // If we have two indexes with the same cost, and one of the indexes can
-        // satisfy the query without needing to read from the primary table,
-        // make that one slightly lower cost.
+        // satisfy the query without needing to read from the primary table
+        // (scan index), make that one slightly lower cost.
         boolean needsToReadFromScanIndex = true;
-        if (!isScanIndex) {
-            HashSet<Column> set1 = New.hashSet();
-            for (int i = 0; i < filters.length; i++) {
-                if (filters[i].getSelect() != null) {
-                    filters[i].getSelect().isEverything(ExpressionVisitor.getColumnsVisitor(set1));
-                }
-            }
-            if (!set1.isEmpty()) {
-                HashSet<Column> set2 = New.hashSet();
-                for (Column c : set1) {
-                    if (c.getTable() == getTable()) {
-                        set2.add(c);
+        if (!isScanIndex && allColumnsSet != null && !allColumnsSet.isEmpty()) {
+            boolean foundAllColumnsWeNeed = true;
+            for (Column c : allColumnsSet) {
+                if (c.getTable() == getTable()) {
+                    boolean found = false;
+                    for (Column c2 : columns) {
+                        if (c == c2) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        foundAllColumnsWeNeed = false;
+                        break;
                     }
                 }
-                set2.removeAll(Arrays.asList(columns));
-                if (set2.isEmpty()) {
-                    needsToReadFromScanIndex = false;
-                }
+            }
+            if (foundAllColumnsWeNeed) {
+                needsToReadFromScanIndex = false;
             }
         }
         long rc;
@@ -475,7 +473,7 @@ public abstract class BaseIndex extends SchemaObjectBase implements Index {
     }
 
     @Override
-    public IndexLookupBatch createLookupBatch(TableFilter filter) {
+    public IndexLookupBatch createLookupBatch(TableFilter[] filters, int filter) {
         // Lookup batching is not supported.
         return null;
     }

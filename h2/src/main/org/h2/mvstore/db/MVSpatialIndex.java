@@ -5,6 +5,7 @@
  */
 package org.h2.mvstore.db;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import org.h2.api.ErrorCode;
@@ -26,6 +27,7 @@ import org.h2.mvstore.rtree.SpatialKey;
 import org.h2.result.Row;
 import org.h2.result.SearchRow;
 import org.h2.result.SortOrder;
+import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.TableFilter;
 import org.h2.value.Value;
@@ -124,6 +126,11 @@ public class MVSpatialIndex extends BaseIndex implements SpatialIndex, MVIndex {
     public void add(Session session, Row row) {
         TransactionMap<SpatialKey, Value> map = getMap(session);
         SpatialKey key = getKey(row);
+
+        if (key.isNull()) {
+            return;
+        }
+
         if (indexType.isUnique()) {
             // this will detect committed entries only
             RTreeCursor cursor = spatialMap.findContainedKeys(key);
@@ -164,6 +171,11 @@ public class MVSpatialIndex extends BaseIndex implements SpatialIndex, MVIndex {
     @Override
     public void remove(Session session, Row row) {
         SpatialKey key = getKey(row);
+
+        if (key.isNull()) {
+            return;
+        }
+
         TransactionMap<SpatialKey, Value> map = getMap(session);
         try {
             Value old = map.remove(key);
@@ -195,10 +207,11 @@ public class MVSpatialIndex extends BaseIndex implements SpatialIndex, MVIndex {
     }
 
     @Override
-    public Cursor findByGeometry(TableFilter filter, SearchRow intersection) {
+    public Cursor findByGeometry(TableFilter filter, SearchRow first,
+            SearchRow last, SearchRow intersection) {
         Session session = filter.getSession();
         if (intersection == null) {
-            return find(session);
+            return find(session, first, last);
         }
         Iterator<SpatialKey> cursor =
                 spatialMap.findIntersectingKeys(getKey(intersection));
@@ -238,7 +251,8 @@ public class MVSpatialIndex extends BaseIndex implements SpatialIndex, MVIndex {
 
     @Override
     public double getCost(Session session, int[] masks, TableFilter[] filters,
-            int filter, SortOrder sortOrder) {
+            int filter, SortOrder sortOrder,
+            HashSet<Column> allColumnsSet) {
         return SpatialTreeIndex.getCostRangeIndex(masks,
                 table.getRowCountApproximation(), columns);
     }

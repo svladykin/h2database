@@ -12,7 +12,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.Random;
-
 import org.h2.api.JavaObjectSerializer;
 import org.h2.engine.Constants;
 import org.h2.store.DataHandler;
@@ -47,7 +46,7 @@ import org.h2.value.ValueStringFixed;
 import org.h2.value.ValueStringIgnoreCase;
 import org.h2.value.ValueTime;
 import org.h2.value.ValueTimestamp;
-import org.h2.value.ValueTimestampUtc;
+import org.h2.value.ValueTimestampTimeZone;
 import org.h2.value.ValueUuid;
 
 /**
@@ -77,6 +76,11 @@ public class TestValueMemory extends TestBase implements DataHandler {
     public void test() throws SQLException {
         testCompare();
         for (int i = 0; i < Value.TYPE_COUNT; i++) {
+            if (i == 23) {
+                // this used to be "TIMESTAMP UTC", which was a short-lived
+                // experiment
+                continue;
+            }
             Value v = create(i);
             String s = "type: " + v.getType() +
                     " calculated: " + v.getMemory() +
@@ -85,6 +89,11 @@ public class TestValueMemory extends TestBase implements DataHandler {
             trace(s);
         }
         for (int i = 0; i < Value.TYPE_COUNT; i++) {
+            if (i == 23) {
+                // this used to be "TIMESTAMP UTC", which was a short-lived
+                // experiment
+                continue;
+            }
             Value v = create(i);
             if (v == ValueNull.INSTANCE && i == Value.GEOMETRY) {
                 // jts not in the classpath, OK
@@ -164,8 +173,14 @@ public class TestValueMemory extends TestBase implements DataHandler {
             return ValueDate.get(new java.sql.Date(random.nextLong()));
         case Value.TIMESTAMP:
             return ValueTimestamp.fromMillis(random.nextLong());
-        case Value.TIMESTAMP_UTC:
-            return ValueTimestampUtc.fromMillis(random.nextLong());
+        case Value.TIMESTAMP_TZ:
+            // clamp to max legal value
+            long nanos = Math.max(Math.min(random.nextLong(),
+                    24L * 60 * 60 * 1000 * 1000 * 1000 - 1), 0);
+            int timeZoneOffsetMins = (int) (random.nextFloat() * (24 * 60))
+                    - (12 * 60);
+            return ValueTimestampTimeZone.fromDateValueAndNanos(
+                    random.nextLong(), nanos, (short) timeZoneOffsetMins);
         case Value.BYTES:
             return ValueBytes.get(randomBytes(random.nextInt(1000)));
         case Value.STRING:

@@ -164,7 +164,7 @@ public class IndexCursor implements Cursor {
         if (!alwaysFalse) {
             if (intersects != null && index instanceof SpatialIndex) {
                 cursor = ((SpatialIndex) index).findByGeometry(tableFilter,
-                        intersects);
+                        start, end, intersects);
             } else {
                 cursor = index.find(tableFilter, start, end);
             }
@@ -347,7 +347,7 @@ public class IndexCursor implements Cursor {
 
     @Override
     public boolean previous() {
-        throw DbException.throwInternalError();
+        throw DbException.throwInternalError(toString());
     }
 
 }

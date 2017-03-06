@@ -16,7 +16,7 @@ public class Constants {
     /**
      * The build date is updated for each public release.
      */
-    public static final String BUILD_DATE = "2016-01-21";
+    public static final String BUILD_DATE = "2016-10-31";
 
     /**
      * The build date of the last stable release.
@@ -26,7 +26,7 @@ public class Constants {
     /**
      * The build id is incremented for each public release.
      */
-    public static final int BUILD_ID = 191;
+    public static final int BUILD_ID = 193;
 
     /**
      * The build id of the last stable release.
@@ -95,6 +95,11 @@ public class Constants {
      * The TCP protocol version number 15.
      */
     public static final int TCP_PROTOCOL_VERSION_15 = 15;
+
+    /**
+     * The TCP protocol version number 16.
+     */
+    public static final int TCP_PROTOCOL_VERSION_16 = 16;
 
     /**
      * The major version of this database.

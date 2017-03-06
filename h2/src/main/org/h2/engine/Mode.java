@@ -5,9 +5,11 @@
  */
 package org.h2.engine;
 
-import java.util.HashMap;
 import org.h2.util.New;
 import org.h2.util.StringUtils;
+
+import java.util.HashMap;
+import java.util.regex.Pattern;
 
 /**
  * The compatibility modes. There is a fixed set of modes (for example
@@ -138,9 +140,20 @@ public class Mode {
     public boolean onDuplicateKeyUpdate;
 
     /**
+     * Pattern describing the keys the java.sql.Connection.setClientInfo()
+     * method accepts.
+     */
+    public Pattern supportedClientInfoPropertiesRegEx;
+
+    /**
      * Support the # for column names
      */
     public boolean supportPoundSymbolForColumnNames;
+
+    /**
+     * Whether an empty list as in "NAME IN()" results in a syntax error.
+     */
+    public boolean prohibitEmptyInPredicate;
 
     private final String name;
 
@@ -154,6 +167,13 @@ public class Mode {
         mode.supportOffsetFetch = true;
         mode.sysDummy1 = true;
         mode.isolationLevelInSelectOrInsertStatement = true;
+        // See
+        // https://www.ibm.com/support/knowledgecenter/SSEPEK_11.0.0/
+        //     com.ibm.db2z11.doc.java/src/tpc/imjcc_r0052001.dita
+        mode.supportedClientInfoPropertiesRegEx =
+                Pattern.compile("ApplicationName|ClientAccountingInformation|" +
+                        "ClientUser|ClientCorrelationToken");
+        mode.prohibitEmptyInPredicate = true;
         add(mode);
 
         mode = new Mode("Derby");
@@ -162,6 +182,8 @@ public class Mode {
         mode.supportOffsetFetch = true;
         mode.sysDummy1 = true;
         mode.isolationLevelInSelectOrInsertStatement = true;
+        // Derby does not support client info properties as of version 10.12.1.1
+        mode.supportedClientInfoPropertiesRegEx = null;
         add(mode);
 
         mode = new Mode("HSQLDB");
@@ -170,6 +192,11 @@ public class Mode {
         mode.nullConcatIsNull = true;
         mode.uniqueIndexSingleNull = true;
         mode.allowPlusForStringConcat = true;
+        // HSQLDB does not support client info properties. See
+        // http://hsqldb.org/doc/apidocs/
+        //     org/hsqldb/jdbc/JDBCConnection.html#
+        //     setClientInfo%28java.lang.String,%20java.lang.String%29
+        mode.supportedClientInfoPropertiesRegEx = null;
         add(mode);
 
         mode = new Mode("MSSQLServer");
@@ -179,6 +206,9 @@ public class Mode {
         mode.allowPlusForStringConcat = true;
         mode.swapConvertFunctionParameters = true;
         mode.supportPoundSymbolForColumnNames = true;
+        // MS SQL Server does not support client info properties. See
+        // https://msdn.microsoft.com/en-Us/library/dd571296%28v=sql.110%29.aspx
+        mode.supportedClientInfoPropertiesRegEx = null;
         add(mode);
 
         mode = new Mode("MySQL");
@@ -186,6 +216,13 @@ public class Mode {
         mode.indexDefinitionInCreateTable = true;
         mode.lowerCaseIdentifiers = true;
         mode.onDuplicateKeyUpdate = true;
+        // MySQL allows to use any key for client info entries. See
+        // http://grepcode.com/file/repo1.maven.org/maven2/mysql/
+        //     mysql-connector-java/5.1.24/com/mysql/jdbc/
+        //     JDBC4CommentClientInfoProvider.java
+        mode.supportedClientInfoPropertiesRegEx =
+                Pattern.compile(".*");
+        mode.prohibitEmptyInPredicate = true;
         add(mode);
 
         mode = new Mode("Oracle");
@@ -194,6 +231,11 @@ public class Mode {
         mode.uniqueIndexSingleNullExceptAllColumnsAreNull = true;
         mode.treatEmptyStringsAsNull = true;
         mode.supportPoundSymbolForColumnNames = true;
+        // Oracle accepts keys of the form <namespace>.*. See
+        // https://docs.oracle.com/database/121/JJDBC/jdbcvers.htm#JJDBC29006
+        mode.supportedClientInfoPropertiesRegEx =
+                Pattern.compile(".*\\..*");
+        mode.prohibitEmptyInPredicate = true;
         add(mode);
 
         mode = new Mode("PostgreSQL");
@@ -203,6 +245,12 @@ public class Mode {
         mode.systemColumns = true;
         mode.logIsLogBase10 = true;
         mode.serialColumnIsNotPK = true;
+        // PostgreSQL only supports the ApplicationName property. See
+        // https://github.com/hhru/postgres-jdbc/blob/master/postgresql-jdbc-9.2-1002.src/
+        //     org/postgresql/jdbc4/AbstractJdbc4Connection.java
+        mode.supportedClientInfoPropertiesRegEx =
+                Pattern.compile("ApplicationName");
+        mode.prohibitEmptyInPredicate = true;
         add(mode);
     }
 

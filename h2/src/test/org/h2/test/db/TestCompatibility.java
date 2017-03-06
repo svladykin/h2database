@@ -12,7 +12,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-
 import org.h2.api.ErrorCode;
 import org.h2.test.TestBase;
 
@@ -219,6 +218,11 @@ public class TestCompatibility extends TestBase {
         prep.setInt(1, 2);
         prep.executeQuery();
         stat.execute("DROP TABLE TEST IF EXISTS");
+
+        stat.execute("DROP TABLE TEST IF EXISTS");
+        stat.execute("CREATE TABLE TEST(ID INT)");
+        stat.executeQuery("SELECT * FROM TEST WHERE ID IN ()");
+        stat.execute("DROP TABLE TEST IF EXISTS");
     }
 
     private void testLog(double expected, Statement stat) throws SQLException {
@@ -407,6 +411,9 @@ public class TestCompatibility extends TestBase {
         // make sure we're ignoring the index part of the statement
         rs = stat.executeQuery("select * from test (index table1_index)");
         rs.close();
+
+        // UNIQUEIDENTIFIER is MSSQL's equivalent of UUID
+        stat.execute("create table test3 (id UNIQUEIDENTIFIER)");
     }
 
     private void testDB2() throws SQLException {
