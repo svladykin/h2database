@@ -531,7 +531,7 @@ public class Transfer {
             break;
         default:
             if (JdbcUtils.customDataTypesHandler != null) {
-                writeBytes(JdbcUtils.customDataTypesHandler.convert(v, Value.BYTES).getBytesNoCopy());
+                writeBytes(v.getBytesNoCopy());
                 break;
             }
             throw DbException.get(ErrorCode.CONNECTION_BROKEN_1, "type=" + type);
