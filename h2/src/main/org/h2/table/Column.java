@@ -86,7 +86,7 @@ public class Column {
     private SingleColumnResolver resolver;
     private String comment;
     private boolean primaryKey;
-    private boolean invisible;
+    private boolean visible = true;
 
     public Column(String name, int type) {
         this(name, type, -1, -1, -1);
@@ -258,12 +258,12 @@ public class Column {
         nullable = b;
     }
 
-    public boolean getInvisible() {
-        return invisible;
+    public boolean getVisible() {
+        return visible;
     }
 
-    public void setInvisible(boolean b) {
-        invisible = b;
+    public void setVisible(boolean b) {
+        visible = b;
     }
 
     /**
@@ -445,6 +445,11 @@ public class Column {
             default:
             }
         }
+
+        if (!visible) {
+            buff.append(" INVISIBLE ");
+        }
+
         if (defaultExpression != null) {
             String sql = defaultExpression.getSQL();
             if (sql != null) {
@@ -757,6 +762,7 @@ public class Column {
         isComputed = source.isComputed;
         selectivity = source.selectivity;
         primaryKey = source.primaryKey;
+        visible = source.visible;
     }
 
 }

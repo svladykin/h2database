@@ -6199,6 +6199,49 @@ SELECT * FROM TEST;
 DROP TABLE TEST;
 > ok
 
+create table test(id int, name varchar invisible);
+> ok
+
+select * from test;
+> ID
+> --
+> rows: 0
+
+alter table test alter column name set visible;
+> ok
+
+select * from test;
+> ID NAME
+> -- ----
+> rows: 0
+
+alter table test add modify_date timestamp invisible before name;
+> ok
+
+select * from test;
+> ID NAME
+> -- ----
+> rows: 0
+
+alter table test alter column modify_date timestamp visible;
+> ok
+
+select * from test;
+> ID MODIFY_DATE NAME
+> -- ----------- ----
+> rows: 0
+
+alter table test alter column modify_date set invisible;
+> ok
+
+select * from test;
+> ID NAME
+> -- ----
+> rows: 0
+
+drop table test;
+> ok
+
 --- autoIncrement ----------------------------------------------------------------------------------------------
 CREATE MEMORY TABLE TEST(ID INT PRIMARY KEY, NAME VARCHAR);
 > ok

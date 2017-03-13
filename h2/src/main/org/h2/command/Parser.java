@@ -3993,6 +3993,11 @@ public class Parser {
         } else {
             column = parseColumnWithType(columnName);
         }
+        if (readIf("INVISIBLE")) {
+            column.setVisible(false);
+        } else if (readIf("VISIBLE")) {
+            column.setVisible(true);
+        }
         if (readIf("NOT")) {
             read("NULL");
             column.setNullable(false);
@@ -5718,6 +5723,14 @@ public class Parser {
                     command.setType(CommandInterface.ALTER_TABLE_ALTER_COLUMN_DEFAULT);
                     command.setDefaultExpression(defaultExpression);
                     return command;
+                } else if (readIf("INVISIBLE")) {
+                    command.setType(CommandInterface.ALTER_TABLE_ALTER_COLUMN_VISIBILITY);
+                    command.setVisible(false);
+                    return command;
+                } else if (readIf("VISIBLE")) {
+                    command.setType(CommandInterface.ALTER_TABLE_ALTER_COLUMN_VISIBILITY);
+                    command.setVisible(true);
+                    return command;
                 }
             } else if (readIf("RESTART")) {
                 readIf("WITH");
@@ -6114,9 +6127,6 @@ public class Parser {
                             ref.setTableName(tableName);
                             parseReferences(ref, schema, tableName);
                             command.addConstraintCommand(ref);
-                        }
-                        if (readIf("INVISIBLE")) {
-                            column.setInvisible(true);
                         }
                     }
                 } while (readIfMore());

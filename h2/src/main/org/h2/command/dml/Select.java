@@ -731,7 +731,7 @@ public class Select extends Query {
         String alias = filter.getTableAlias();
         Column[] columns = t.getColumns();
         for (Column c : columns) {
-            if (c.getInvisible()) {
+            if (!c.getVisible()) {
                 continue;
             }
             if (filter.isNaturalJoinColumn(c)) {
