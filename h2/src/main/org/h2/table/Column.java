@@ -86,6 +86,7 @@ public class Column {
     private SingleColumnResolver resolver;
     private String comment;
     private boolean primaryKey;
+    private boolean invisible;
 
     public Column(String name, int type) {
         this(name, type, -1, -1, -1);
@@ -255,6 +256,14 @@ public class Column {
 
     public void setNullable(boolean b) {
         nullable = b;
+    }
+
+    public boolean getInvisible() {
+        return invisible;
+    }
+
+    public void setInvisible(boolean b) {
+        invisible = b;
     }
 
     /**

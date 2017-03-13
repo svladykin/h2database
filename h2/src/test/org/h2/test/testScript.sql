@@ -4915,6 +4915,22 @@ SELECT group_concat(name) FROM TEST group by id;
 drop table test;
 > ok
 
+create table test(a int primary key, b int invisible, c int);
+> ok
+
+select * from test;
+> A C
+> - -
+> rows: 0
+
+select a, b, c from test;
+> A B C
+> - - -
+> rows: 0
+
+drop table test;
+> ok
+
 --- script drop ---------------------------------------------------------------------------------------------
 create memory table test (id int primary key, im_ie varchar(10));
 > ok

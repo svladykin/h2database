@@ -6115,6 +6115,9 @@ public class Parser {
                             parseReferences(ref, schema, tableName);
                             command.addConstraintCommand(ref);
                         }
+                        if (readIf("INVISIBLE")) {
+                            column.setInvisible(true);
+                        }
                     }
                 } while (readIfMore());
             }
