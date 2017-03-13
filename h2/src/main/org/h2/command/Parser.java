@@ -135,6 +135,7 @@ import org.h2.table.Table;
 import org.h2.table.TableFilter;
 import org.h2.table.TableFilter.TableFilterVisitor;
 import org.h2.table.TableView;
+import org.h2.util.JdbcUtils;
 import org.h2.util.MathUtils;
 import org.h2.util.New;
 import org.h2.util.StatementBuilder;
@@ -722,6 +723,12 @@ public class Parser {
                 return filter.getRowIdColumn();
             }
         }
+        if (JdbcUtils.systemColumnsHandler != null) {
+            Column sysColumn = JdbcUtils.systemColumnsHandler.getSystemColumn(filter.getTable(), columnName);
+            if (sysColumn != null) {
+                return sysColumn;
+            }
+        }
         return filter.getTable().getColumn(columnName);
     }
 
@@ -876,6 +883,12 @@ public class Parser {
         String id = readColumnIdentifier();
         if (database.getSettings().rowId && Column.ROWID.equals(id)) {
             return table.getRowIdColumn();
+        }
+        if (JdbcUtils.systemColumnsHandler != null) {
+            Column sysColumn = JdbcUtils.systemColumnsHandler.getSystemColumn(table, id);
+            if (sysColumn != null) {
+                return sysColumn;
+            }
         }
         return table.getColumn(id);
     }

@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.h2.util.JdbcUtils;
 import org.h2.api.ErrorCode;
 import org.h2.command.Prepared;
 import org.h2.constraint.Constraint;
@@ -70,6 +72,11 @@ public abstract class Table extends SchemaObjectBase {
      * using the SCRIPT command.
      */
     protected boolean isHidden;
+
+    /**
+     * Effective number of columns, 0 if no extra columns exist
+     */
+    protected int columnIdCount;
 
     private final HashMap<String, Column> columnMap;
     private final boolean persistIndexes;
@@ -616,7 +623,7 @@ public abstract class Table extends SchemaObjectBase {
     }
 
     public Row getTemplateRow() {
-        return database.createRow(new Value[columns.length], Row.MEMORY_CALCULATE);
+        return database.createRow(new Value[getColumnIdCount()], Row.MEMORY_CALCULATE);
     }
 
     /**
@@ -627,9 +634,9 @@ public abstract class Table extends SchemaObjectBase {
      */
     public SearchRow getTemplateSimpleRow(boolean singleColumn) {
         if (singleColumn) {
-            return new SimpleRowValue(columns.length);
+            return new SimpleRowValue(getColumnIdCount());
         }
-        return new SimpleRow(new Value[columns.length]);
+        return new SimpleRow(new Value[getColumnIdCount()]);
     }
 
     Row getNullRow() {
@@ -637,7 +644,7 @@ public abstract class Table extends SchemaObjectBase {
         if (row == null) {
             // Here can be concurrently produced more than one row, but it must
             // be ok.
-            Value[] values = new Value[columns.length];
+            Value[] values = new Value[getColumnIdCount()];
             Arrays.fill(values, ValueNull.INSTANCE);
             nullRow = row = database.createRow(values, 1);
         }
@@ -672,6 +679,18 @@ public abstract class Table extends SchemaObjectBase {
      */
     public Column getColumn(String columnName) {
         Column column = columnMap.get(columnName);
+
+        //if (column == null && JdbcUtils.systemColumnsHandler != null) {
+        //    Column[] sysColumns = JdbcUtils.systemColumnsHandler.getSystemColumns(this);
+        //   if (sysColumns != null)
+        //        for(int i = 0; i < sysColumns.length; ++i) {
+        //            if (sysColumns[i].getName().equals(columnName)) {
+        //                column = sysColumns[i];
+        //                break;
+        //            }
+        //        }
+        //}
+
         if (column == null) {
             throw DbException.get(ErrorCode.COLUMN_NOT_FOUND_1, columnName);
         }
@@ -1198,5 +1217,7 @@ public abstract class Table extends SchemaObjectBase {
     public boolean isMVStore() {
         return false;
     }
+
+    public int getColumnIdCount() { return (columnIdCount==0 && columns != null) ? columns.length : columnIdCount; }
 
 }

@@ -39,6 +39,7 @@ public abstract class TableBase extends Table {
         if (data.tableEngineParams != null) {
             this.tableEngineParams = data.tableEngineParams;
         }
+        this.columnIdCount = data.columnIdCount;
         setTemporary(data.temporary);
         Column[] cols = new Column[data.columns.size()];
         data.columns.toArray(cols);

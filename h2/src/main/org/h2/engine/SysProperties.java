@@ -522,6 +522,14 @@ public class SysProperties {
     public static final String JAVA_OBJECT_SERIALIZER =
             Utils.getProperty("h2.javaObjectSerializer", null);
 
+    /**
+     * System property <code>h2.systemColumnsHandler</code>
+     * (default: null).<br />
+     * The SystemColumnsHandler class name for resolving system columns
+     */
+    public static final String SYSTEM_COLUMNS_HANDLER =
+            Utils.getProperty("h2.systemColumnsHandler", null);
+
     private static final String H2_BASE_DIR = "h2.baseDir";
 
     private SysProperties() {

@@ -971,7 +971,7 @@ public abstract class Value {
             }
         } catch (NumberFormatException e) {
             throw DbException.get(
-                    ErrorCode.DATA_CONVERSION_ERROR_1, e, getString());
+                    ErrorCode.DATA_CONVERSION_ERROR_1, e, getString() + ". Target type: " + targetType);
         }
     }
 
