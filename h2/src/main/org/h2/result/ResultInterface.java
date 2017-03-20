@@ -37,10 +37,18 @@ public interface ResultInterface extends AutoCloseable {
     /**
      * Get the current row id, starting with 0.
      * -1 is returned when next() was not called yet.
+     * After the last row it must return {@code Integer.MAX_VALUE}.
      *
      * @return the row id
      */
     int getRowId();
+
+    /**
+     * Get the number of rows returned from this result.
+     *
+     * @return the number of returned rows
+     */
+    int getReturnedRowsCount();
 
     /**
      * Get the number of visible columns.
@@ -56,6 +64,20 @@ public interface ResultInterface extends AutoCloseable {
      * @return the number of rows
      */
     int getRowCount();
+
+    /**
+     * Check if this result know the number of rows in it.
+     *
+     * @return true if it knows
+     */
+    boolean hasRowCount();
+
+    /**
+     * Check if this result has more rows to fetch.
+     *
+     * @return true if it has
+     */
+    boolean hasNext();
 
     /**
      * Check if this result set should be closed, for example because it is

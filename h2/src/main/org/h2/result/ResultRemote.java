@@ -33,6 +33,7 @@ public class ResultRemote implements ResultInterface {
     private int rowId, rowOffset;
     private ArrayList<Value[]> result;
     private final Trace trace;
+    private int returnedRowsCount;
 
     public ResultRemote(SessionRemote session, Transfer transfer, int id,
             int columnCount, int fetchSize) throws IOException {
@@ -104,6 +105,7 @@ public class ResultRemote implements ResultInterface {
     @Override
     public void reset() {
         rowId = -1;
+        returnedRowsCount = 0;
         currentRow = null;
         if (session == null) {
             return;
@@ -126,7 +128,7 @@ public class ResultRemote implements ResultInterface {
 
     @Override
     public boolean next() {
-        if (rowId < rowCount) {
+        if (hasNext()) {
             rowId++;
             remapIfOld();
             if (rowId < rowCount) {
@@ -134,8 +136,10 @@ public class ResultRemote implements ResultInterface {
                     fetchRows(true);
                 }
                 currentRow = result.get(rowId - rowOffset);
+                returnedRowsCount++;
                 return true;
             }
+            rowId = Integer.MAX_VALUE;
             currentRow = null;
         }
         return false;
@@ -147,6 +151,11 @@ public class ResultRemote implements ResultInterface {
     }
 
     @Override
+    public int getReturnedRowsCount() {
+        return returnedRowsCount;
+    }
+
+    @Override
     public int getVisibleColumnCount() {
         return columns.length;
     }
@@ -154,6 +163,16 @@ public class ResultRemote implements ResultInterface {
     @Override
     public int getRowCount() {
         return rowCount;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return rowId < rowCount;
+    }
+
+    @Override
+    public boolean hasRowCount() {
+        return true;
     }
 
     private void sendClose() {

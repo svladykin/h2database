@@ -48,7 +48,7 @@ public class ConditionInSelect extends Condition {
         }
         ResultInterface rows = query.query(0);
         Value l = left.getValue(session);
-        if (rows.getRowCount() == 0) {
+        if (!rows.hasNext()) {
             return ValueBoolean.get(all);
         } else if (l == ValueNull.INSTANCE) {
             return l;

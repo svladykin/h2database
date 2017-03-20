@@ -2526,7 +2526,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
             debugCodeCall("getRow");
             checkClosed();
             int rowId = result.getRowId();
-            if (rowId >= result.getRowCount()) {
+            if (rowId == Integer.MAX_VALUE) {
                 return 0;
             }
             return rowId + 1;
@@ -2674,9 +2674,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("isBeforeFirst");
             checkClosed();
-            int row = result.getRowId();
-            int count = result.getRowCount();
-            return count > 0 && row < 0;
+            return result.getRowId() < 0 && result.hasNext();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -2695,9 +2693,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("isAfterLast");
             checkClosed();
-            int row = result.getRowId();
-            int count = result.getRowCount();
-            return count > 0 && row >= count;
+            return result.getRowId() == Integer.MAX_VALUE && result.getReturnedRowsCount() > 0;
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -2715,8 +2711,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("isFirst");
             checkClosed();
-            int row = result.getRowId();
-            return row == 0 && row < result.getRowCount();
+            return result.getRowId() == 0;
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -2735,7 +2730,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
             debugCodeCall("isLast");
             checkClosed();
             int row = result.getRowId();
-            return row >= 0 && row == result.getRowCount() - 1;
+            return row >= 0 && row != Integer.MAX_VALUE && !result.hasNext();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -2791,10 +2786,9 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("first");
             checkClosed();
-            if (result.getRowId() < 0) {
-                return nextRow();
+            if (result.getRowId() >= 0) {
+                resetResult();
             }
-            resetResult();
             return nextRow();
         } catch (Exception e) {
             throw logAndConvert(e);
@@ -2867,6 +2861,9 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("relative", rowCount);
             checkClosed();
+            if (rowCount == 1) {
+                return nextRow();
+            }
             int row = result.getRowId() + 1 + rowCount;
             if (row < 0) {
                 row = 0;
@@ -3208,7 +3205,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
     }
 
     private void checkOnValidRow() {
-        if (result.getRowId() < 0 || result.getRowId() >= result.getRowCount()) {
+        if (result.getRowId() < 0 || result.getRowId() == Integer.MAX_VALUE) {
             throw DbException.get(ErrorCode.NO_DATA_AVAILABLE);
         }
     }

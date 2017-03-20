@@ -220,7 +220,7 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
         right.disableCache();
         while (true) {
             r = right.query(0);
-            if (r.getRowCount() == 0) {
+            if (!r.hasNext()) {
                 break;
             }
             while (r.next()) {

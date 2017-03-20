@@ -1415,4 +1415,181 @@ public class Select extends Query {
         return sort;
     }
 
+    /**
+     * Lazy evaluation support for this query.
+     *
+     * @author Sergi Vladykin
+     */
+    private final class LazyResult implements ResultInterface {
+
+        private int rowId = -1;
+        private int returnedRowsCount;
+        private Value[] currentRow;
+        private Value[] nextRow;
+
+        @Override
+        public void reset() {
+            rowId = -1;
+            returnedRowsCount = 0;
+            currentRow = null;
+            nextRow = null;
+        }
+
+        @Override
+        public Value[] currentRow() {
+            return currentRow;
+        }
+
+        @Override
+        public boolean next() {
+            if (hasNext()) {
+                rowId++;
+                currentRow = nextRow;
+                nextRow = null;
+                returnedRowsCount++;
+                return true;
+            }
+            rowId = Integer.MAX_VALUE;
+            currentRow = null;
+            return false;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (nextRow != null) {
+                return true;
+            }
+            
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public int getReturnedRowsCount() {
+            return returnedRowsCount;
+        }
+
+        @Override
+        public int getRowId() {
+            return rowId;
+        }
+
+        @Override
+        public int getVisibleColumnCount() {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public int getRowCount() {
+            throw DbException.getUnsupportedException("Row count is unknown for lazy result.");
+        }
+
+        @Override
+        public boolean hasRowCount() {
+            return false;
+        }
+
+        @Override
+        public boolean needToClose() {
+            return true;
+        }
+
+        @Override
+        public boolean isClosed() {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public void close() {
+            // TODO Auto-generated method stub
+            
+        }
+
+        @Override
+        public String getAlias(int i) {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getSchemaName(int i) {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getTableName(int i) {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getColumnName(int i) {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public int getColumnType(int i) {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public long getColumnPrecision(int i) {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public int getColumnScale(int i) {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public int getDisplaySize(int i) {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public boolean isAutoIncrement(int i) {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public int getNullable(int i) {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public void setFetchSize(int fetchSize) {
+            // ignore
+        }
+
+        @Override
+        public int getFetchSize() {
+            // We always fetch rows one by one.
+            return 1;
+        }
+
+        @Override
+        public ResultInterface createShallowCopy(Session targetSession) {
+            // Copying is impossible with lazy result.
+            return null;
+        }
+
+        @Override
+        public boolean containsDistinct(Value[] values) {
+            // We have to make sure that we do not allow lazy
+            // evaluation when this call is needed:
+            // WHERE x IN (SELECT ...).
+            throw DbException.throwInternalError();
+        }
+    }
 }

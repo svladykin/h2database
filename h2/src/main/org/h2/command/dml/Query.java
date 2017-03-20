@@ -305,7 +305,7 @@ public abstract class Query extends Prepared {
     }
 
     @Override
-    public ResultInterface query(int maxrows) {
+    public final ResultInterface query(int maxrows) {
         return query(maxrows, null);
     }
 
