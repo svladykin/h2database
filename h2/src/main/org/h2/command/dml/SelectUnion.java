@@ -148,7 +148,7 @@ public class SelectUnion extends Query {
     }
 
     @Override
-    protected LocalResult queryWithoutCache(int maxRows, ResultTarget target) {
+    protected ResultInterface queryWithoutCache(int maxRows, ResultTarget target) {
         if (maxRows != 0) {
             // maxRows is set (maxRows 0 means no limit)
             int l;
@@ -435,7 +435,7 @@ public class SelectUnion extends Query {
     }
 
     @Override
-    public LocalResult query(int limit, ResultTarget target) {
+    public ResultInterface query(int limit, ResultTarget target) {
         // union doesn't always know the parameter list of the left and right
         // queries
         return queryWithoutCache(limit, target);
