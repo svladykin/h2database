@@ -7,6 +7,7 @@ package org.h2.result;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import org.h2.engine.Session;
 import org.h2.engine.SessionRemote;
 import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
@@ -254,4 +255,20 @@ public class ResultRemote implements ResultInterface {
         return true;
     }
 
+    @Override
+    public ResultInterface createShallowCopy(Session targetSession) {
+        // The operation is not supported on remote result.
+        return null;
+    }
+
+    @Override
+    public boolean isClosed() {
+        return result == null;
+    }
+
+    @Override
+    public boolean containsDistinct(Value[] values) {
+        // We should never do this on remote result.
+        throw DbException.throwInternalError();
+    }
 }

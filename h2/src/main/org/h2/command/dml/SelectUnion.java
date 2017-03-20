@@ -205,8 +205,8 @@ public class SelectUnion extends Query {
         default:
             DbException.throwInternalError("type=" + unionType);
         }
-        LocalResult l = left.query(0);
-        LocalResult r = right.query(0);
+        ResultInterface l = left.query(0);
+        ResultInterface r = right.query(0);
         l.reset();
         r.reset();
         switch (unionType) {
