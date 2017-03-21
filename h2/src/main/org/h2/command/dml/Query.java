@@ -318,7 +318,8 @@ public abstract class Query extends Prepared {
      */
     ResultInterface query(int limit, ResultTarget target) {
         fireBeforeSelectTriggers();
-        if (noCache || !session.getDatabase().getOptimizeReuseResults()) {
+        if (noCache || !session.getDatabase().getOptimizeReuseResults() ||
+                session.isLazyQueryExecution()) {
             return queryWithoutCache(limit, target);
         }
         Value[] params = getParameterValues();

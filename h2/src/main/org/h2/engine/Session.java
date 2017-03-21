@@ -125,6 +125,7 @@ public class Session extends SessionWithState {
     private HashMap<Object, ViewIndex> subQueryIndexCache;
     private boolean joinBatchEnabled;
     private boolean forceJoinOrder;
+    private boolean lazyQueryExecution;
 
     /**
      * Temporary LOBs from result sets. Those are kept for some time. The
@@ -156,6 +157,14 @@ public class Session extends SessionWithState {
         this.lockTimeout = setting == null ?
                 Constants.INITIAL_LOCK_TIMEOUT : setting.getIntValue();
         this.currentSchemaName = Constants.SCHEMA_MAIN;
+    }
+
+    public void setLazyQueryExecution(boolean lazyQueryExecution) {
+        this.lazyQueryExecution = lazyQueryExecution;
+    }
+
+    public boolean isLazyQueryExecution() {
+        return lazyQueryExecution;
     }
 
     public void setForceJoinOrder(boolean forceJoinOrder) {
