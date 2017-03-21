@@ -2525,10 +2525,10 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("getRow");
             checkClosed();
-            int rowId = result.getRowId();
-            if (rowId == Integer.MAX_VALUE) {
+            if (result.isAfterLast()) {
                 return 0;
             }
+            int rowId = result.getRowId();
             return rowId + 1;
         } catch (Exception e) {
             throw logAndConvert(e);
@@ -2693,7 +2693,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("isAfterLast");
             checkClosed();
-            return result.getRowId() == Integer.MAX_VALUE && result.getReturnedRowsCount() > 0;
+            return result.getRowId() >= 0 && result.isAfterLast();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -2711,7 +2711,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("isFirst");
             checkClosed();
-            return result.getRowId() == 0;
+            return result.getRowId() == 0 && !result.isAfterLast();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -2729,8 +2729,8 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("isLast");
             checkClosed();
-            int row = result.getRowId();
-            return row >= 0 && row != Integer.MAX_VALUE && !result.hasNext();
+            int rowId = result.getRowId();
+            return rowId >= 0 && !result.isAfterLast() && !result.hasNext();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -2766,6 +2766,11 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("afterLast");
             checkClosed();
+            if (result.getRowId() < 0 && !result.hasNext()) {
+                // According to JDBC spec the method does not
+                // affect state of an empty cursor.
+                return;
+            }
             while (nextRow()) {
                 // nothing
             }
@@ -2831,11 +2836,10 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
             if (rowNumber < 0) {
                 rowNumber = result.getRowCount() + rowNumber + 1;
             }
-            if (rowNumber < result.getReturnedRowsCount() ||
-                    result.getRowId() == Integer.MAX_VALUE) {
+            if (--rowNumber < result.getRowId()) {
                 resetResult();
             }
-            while (result.getReturnedRowsCount() < rowNumber) {
+            while (result.getRowId() < rowNumber) {
                 if (!nextRow()) {
                     return false;
                 }
@@ -2862,11 +2866,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
             debugCodeCall("relative", rowCount);
             checkClosed();
             if (rowCount < 0) {
-                rowCount = result.getReturnedRowsCount() + rowCount;
-                // adjust if we are after last
-                if (result.getRowId() == Integer.MAX_VALUE) {
-                    rowCount++;
-                }
+                rowCount = result.getRowId() + rowCount + 1;
                 resetResult();
             }
             for (int i = 0; i < rowCount; i++) {
@@ -3209,8 +3209,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
     }
 
     private boolean isOnValidRow() {
-        int rowId = result.getRowId();
-        return rowId >= 0 && rowId != Integer.MAX_VALUE;
+        return result.getRowId() >= 0 && !result.isAfterLast();
     }
 
     private void checkOnValidRow() {

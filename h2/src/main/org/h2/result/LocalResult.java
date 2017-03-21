@@ -43,7 +43,6 @@ public class LocalResult implements ResultInterface, ResultTarget {
     private boolean randomAccess;
     private boolean closed;
     private boolean containsLobs;
-    private int returnedRowsCount;
 
     /**
      * Construct a local result object.
@@ -220,7 +219,6 @@ public class LocalResult implements ResultInterface, ResultTarget {
     @Override
     public void reset() {
         rowId = -1;
-        returnedRowsCount = 0;
         currentRow = null;
         if (external != null) {
             external.reset();
@@ -247,10 +245,8 @@ public class LocalResult implements ResultInterface, ResultTarget {
                 } else {
                     currentRow = rows.get(rowId);
                 }
-                returnedRowsCount++;
                 return true;
             }
-            rowId = Integer.MAX_VALUE;
             currentRow = null;
         }
         return false;
@@ -262,8 +258,8 @@ public class LocalResult implements ResultInterface, ResultTarget {
     }
 
     @Override
-    public int getReturnedRowsCount() {
-        return returnedRowsCount;
+    public boolean isAfterLast() {
+        return rowId >= rowCount;
     }
 
     private void cloneLobs(Value[] values) {
@@ -389,7 +385,6 @@ public class LocalResult implements ResultInterface, ResultTarget {
 
     @Override
     public boolean hasNext() {
-        // rowId can be Integer.MAX_VALUE -> can overflow
         return !closed && rowId < rowCount - 1;
     }
 

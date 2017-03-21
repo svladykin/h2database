@@ -19,10 +19,10 @@ public abstract class LazyResult implements ResultInterface {
 
     private Expression[] expressions;
     private int rowId = -1;
-    private int returnedRowsCount;
     private Value[] currentRow;
     private Value[] nextRow;
     private boolean closed;
+    private boolean afterLast;
 
     public LazyResult(Expression[] expressions) {
         this.expressions = expressions;
@@ -31,7 +31,7 @@ public abstract class LazyResult implements ResultInterface {
     @Override
     public void reset() {
         rowId = -1;
-        returnedRowsCount = 0;
+        afterLast = false;
         currentRow = null;
         nextRow = null;
     }
@@ -47,20 +47,19 @@ public abstract class LazyResult implements ResultInterface {
             rowId++;
             currentRow = nextRow;
             nextRow = null;
-            returnedRowsCount++;
             return true;
         }
-        rowId = Integer.MAX_VALUE;
         currentRow = null;
+        afterLast = true;
         return false;
     }
 
     @Override
     public boolean hasNext() {
-        if (closed) {
+        if (closed || afterLast) {
             return false;
         }
-        if (nextRow == null && rowId != Integer.MAX_VALUE) {
+        if (nextRow == null) {
             nextRow = fetchNextRow();
         }
         return nextRow != null;
@@ -72,10 +71,10 @@ public abstract class LazyResult implements ResultInterface {
      * @return next row or null
      */
     protected abstract Value[] fetchNextRow();
-    
+
     @Override
-    public int getReturnedRowsCount() {
-        return returnedRowsCount;
+    public boolean isAfterLast() {
+        return afterLast;
     }
 
     @Override
