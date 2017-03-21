@@ -2766,11 +2766,6 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("afterLast");
             checkClosed();
-            if (result.getRowId() < 0 && !result.hasNext()) {
-                // According to JDBC spec the method does not
-                // affect state of an empty cursor.
-                return;
-            }
             while (nextRow()) {
                 // nothing
             }
