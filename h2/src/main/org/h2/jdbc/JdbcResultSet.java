@@ -2693,7 +2693,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("isAfterLast");
             checkClosed();
-            return result.getRowId() >= 0 && result.isAfterLast();
+            return result.getRowId() > 0 && result.isAfterLast();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
