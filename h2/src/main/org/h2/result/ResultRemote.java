@@ -128,7 +128,7 @@ public class ResultRemote implements ResultInterface {
 
     @Override
     public boolean next() {
-        if (hasNext()) {
+        if (rowId < rowCount) {
             rowId++;
             remapIfOld();
             if (rowId < rowCount) {
@@ -167,7 +167,8 @@ public class ResultRemote implements ResultInterface {
 
     @Override
     public boolean hasNext() {
-        return rowId < rowCount;
+        // rowId can be Integer.MAX_VALUE -> can overflow
+        return rowId < rowCount - 1;
     }
 
     @Override

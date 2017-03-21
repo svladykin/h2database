@@ -239,7 +239,7 @@ public class LocalResult implements ResultInterface, ResultTarget {
 
     @Override
     public boolean next() {
-        if (hasNext()) {
+        if (!closed && rowId < rowCount) {
             rowId++;
             if (rowId < rowCount) {
                 if (external != null) {
@@ -389,7 +389,8 @@ public class LocalResult implements ResultInterface, ResultTarget {
 
     @Override
     public boolean hasNext() {
-        return !closed && rowId < rowCount;
+        // rowId can be Integer.MAX_VALUE -> can overflow
+        return rowId < rowCount - 1;
     }
 
     @Override
