@@ -390,7 +390,7 @@ public class LocalResult implements ResultInterface, ResultTarget {
     @Override
     public boolean hasNext() {
         // rowId can be Integer.MAX_VALUE -> can overflow
-        return rowId < rowCount - 1;
+        return !closed && rowId < rowCount - 1;
     }
 
     @Override
