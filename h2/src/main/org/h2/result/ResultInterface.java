@@ -65,13 +65,6 @@ public interface ResultInterface extends AutoCloseable {
     int getRowCount();
 
     /**
-     * Check if this result know the number of rows in it.
-     *
-     * @return true if it knows
-     */
-    boolean hasRowCount();
-
-    /**
      * Check if this result has more rows to fetch.
      *
      * @return true if it has
@@ -185,6 +178,13 @@ public interface ResultInterface extends AutoCloseable {
      * @return the fetch size
      */
     int getFetchSize();
+
+    /**
+     * Check if this a lazy execution result.
+     *
+     * @return true if it is a lazy result
+     */
+    boolean isLazy();
 
     /**
      * Check if this result set is closed.

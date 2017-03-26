@@ -111,7 +111,7 @@ public class CommandContainer extends Command {
         start();
         prepared.checkParameters();
         ResultInterface result = prepared.query(maxrows);
-        prepared.trace(startTimeNanos, result.hasRowCount() ? result.getRowCount() : -1);
+        prepared.trace(startTimeNanos, result.isLazy() ? -1 : result.getRowCount());
         setProgress(DatabaseEventListener.STATE_STATEMENT_END);
         return result;
     }

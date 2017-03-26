@@ -168,7 +168,7 @@ public class Select extends Query {
         }
     }
 
-    private void queryGroupSorted(int columnCount, ResultTarget result) {
+    private LazyResult queryGroupSorted(int columnCount, ResultTarget result) {
         int rowNumber = 0;
         setCurrentRowNumber(0);
         currentGroup = null;
@@ -207,6 +207,7 @@ public class Select extends Query {
         if (previousKeyValues != null) {
             addGroupSortedRow(previousKeyValues, columnCount, result);
         }
+        return null;
     }
 
     private void addGroupSortedRow(Value[] keyValues, int columnCount,
@@ -523,7 +524,7 @@ public class Select extends Query {
         }
     }
 
-    private void queryFlat(int columnCount, ResultTarget result, long limitRows) {
+    private LazyResult queryFlat(int columnCount, ResultTarget result, long limitRows) {
         // limitRows must be long, otherwise we get an int overflow
         // if limitRows is at or near Integer.MAX_VALUE
         // limitRows is never 0 here
@@ -566,6 +567,7 @@ public class Select extends Query {
         if (isForUpdateMvcc) {
             topTableFilter.lockRows(forUpdateRows);
         }
+        return null;
     }
 
     private void queryQuick(int columnCount, ResultTarget result) {
@@ -597,10 +599,13 @@ public class Select extends Query {
                 limitRows = Math.min(l, limitRows);
             }
         }
+        boolean lazy = session.isLazyQueryExecution() && target == null &&
+                !isForUpdate && !isQuickAggregateQuery && limitRows != 0 &&
+                offsetExpr == null;
         int columnCount = expressions.size();
         LocalResult result = null;
-        if (target == null ||
-                !session.getDatabase().getSettings().optimizeInsertFromSelect) {
+        if (!lazy && (target == null ||
+                !session.getDatabase().getSettings().optimizeInsertFromSelect)) {
             result = createLocalResult(result);
         }
         if (sort != null && (!sortUsingIndex || distinct)) {
@@ -617,7 +622,7 @@ public class Select extends Query {
         if (isGroupQuery && !isGroupSortedQuery) {
             result = createLocalResult(result);
         }
-        if (limitRows >= 0 || offsetExpr != null) {
+        if (!lazy && (limitRows >= 0 || offsetExpr != null)) {
             result = createLocalResult(result);
         }
         topTableFilter.startQuery(session);
@@ -640,27 +645,35 @@ public class Select extends Query {
         }
         topTableFilter.lock(session, exclusive, exclusive);
         ResultTarget to = result != null ? result : target;
+        lazy = to == null;
+        LazyResult lazyResult = null;
         if (limitRows != 0) {
             try {
                 if (isQuickAggregateQuery) {
                     queryQuick(columnCount, to);
                 } else if (isGroupQuery) {
                     if (isGroupSortedQuery) {
-                        queryGroupSorted(columnCount, to);
+                        lazyResult = queryGroupSorted(columnCount, to);
                     } else {
                         queryGroup(columnCount, result);
                     }
                 } else if (isDistinctQuery) {
                     queryDistinct(to, limitRows);
                 } else {
-                    queryFlat(columnCount, to, limitRows);
+                    lazyResult = queryFlat(columnCount, to, limitRows);
                 }
             } finally {
                 JoinBatch jb = getJoinBatch();
-                if (jb != null) {
+                if (jb != null && !lazy) {
                     jb.reset(false);
                 }
             }
+        }
+        if (lazyResult != null) {
+            if (limitRows >= 0) {
+                lazyResult.setLimit(limitRows);
+            }
+            return lazyResult;
         }
         if (offsetExpr != null) {
             result.setOffset(offsetExpr.getValue(session).getInt());

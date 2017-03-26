@@ -77,6 +77,11 @@ public class LocalResult implements ResultInterface, ResultTarget {
         this.expressions = expressions;
     }
 
+    @Override
+    public boolean isLazy() {
+        return false;
+    }
+
     public void setMaxMemoryRows(int maxValue) {
         this.maxMemoryRows = maxValue;
     }
@@ -386,11 +391,6 @@ public class LocalResult implements ResultInterface, ResultTarget {
     @Override
     public boolean hasNext() {
         return !closed && rowId < rowCount - 1;
-    }
-
-    @Override
-    public boolean hasRowCount() {
-        return true;
     }
 
     /**

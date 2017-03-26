@@ -52,6 +52,11 @@ public class ResultRemote implements ResultInterface {
     }
 
     @Override
+    public boolean isLazy() {
+        return false;
+    }
+
+    @Override
     public String getAlias(int i) {
         return columns[i].alias;
     }
@@ -164,11 +169,6 @@ public class ResultRemote implements ResultInterface {
     @Override
     public boolean hasNext() {
         return rowId < rowCount - 1;
-    }
-
-    @Override
-    public boolean hasRowCount() {
-        return true;
     }
 
     private void sendClose() {
