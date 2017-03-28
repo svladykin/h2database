@@ -1391,9 +1391,36 @@ public class Select extends Query {
     }
 
     /**
+     * Lazy execution for this select.
+     */
+    private abstract class LazyResultSelect extends LazyResult {
+
+        LazyResultSelect(Expression[] expressions) {
+            super(expressions);
+        }
+
+        @Override
+        public final int getVisibleColumnCount() {
+            return visibleColumnCount;
+        }
+
+        @Override
+        public final void close() {
+            super.close();
+            // TODO Auto-generated method stub
+        }
+
+        @Override
+        public final void reset() {
+            super.reset();
+            // TODO Auto-generated method stub
+        }
+    }
+
+    /**
      * Lazy execution for a flat query.
      */
-    private final class LazyResultQueryFlat extends LazyResult {
+    private final class LazyResultQueryFlat extends LazyResultSelect {
 
         int rowNumber;
         int sampleSize;
@@ -1404,11 +1431,6 @@ public class Select extends Query {
             this.sampleSize = sampleSize;
             this.columnCount = columnCount;
             setCurrentRowNumber(0);
-        }
-
-        @Override
-        public int getVisibleColumnCount() {
-            return visibleColumnCount;
         }
 
         @Override
@@ -1428,24 +1450,12 @@ public class Select extends Query {
             }
             return null;
         }
-
-        @Override
-        public void close() {
-            super.close();
-            // TODO Auto-generated method stub
-        }
-
-        @Override
-        public void reset() {
-            super.reset();
-            // TODO Auto-generated method stub
-        }
     }
 
     /**
      * Lazy execution for a group sorted query.
      */
-    private final class LazyResultGroupSorted extends LazyResult {
+    private final class LazyResultGroupSorted extends LazyResultSelect {
 
         int rowNumber;
         int columnCount;
@@ -1456,11 +1466,6 @@ public class Select extends Query {
             this.columnCount = columnCount;
             setCurrentRowNumber(0);
             currentGroup = null;
-        }
-
-        @Override
-        public int getVisibleColumnCount() {
-            return visibleColumnCount;
         }
 
         @Override
@@ -1506,18 +1511,6 @@ public class Select extends Query {
                 previousKeyValues = null;
             }
             return row;
-        }
-
-        @Override
-        public void close() {
-            super.close();
-            // TODO Auto-generated method stub
-        }
-
-        @Override
-        public void reset() {
-            super.reset();
-            // TODO Auto-generated method stub
         }
     }
 }
