@@ -169,49 +169,17 @@ public class Select extends Query {
     }
 
     private LazyResult queryGroupSorted(int columnCount, ResultTarget result) {
-        int rowNumber = 0;
-        setCurrentRowNumber(0);
-        currentGroup = null;
-        Value[] previousKeyValues = null;
-        while (topTableFilter.next()) {
-            setCurrentRowNumber(rowNumber + 1);
-            if (condition == null ||
-                    Boolean.TRUE.equals(condition.getBooleanValue(session))) {
-                rowNumber++;
-                Value[] keyValues = new Value[groupIndex.length];
-                // update group
-                for (int i = 0; i < groupIndex.length; i++) {
-                    int idx = groupIndex[i];
-                    Expression expr = expressions.get(idx);
-                    keyValues[i] = expr.getValue(session);
-                }
-
-                if (previousKeyValues == null) {
-                    previousKeyValues = keyValues;
-                    currentGroup = New.hashMap();
-                } else if (!Arrays.equals(previousKeyValues, keyValues)) {
-                    addGroupSortedRow(previousKeyValues, columnCount, result);
-                    previousKeyValues = keyValues;
-                    currentGroup = New.hashMap();
-                }
-                currentGroupRowId++;
-
-                for (int i = 0; i < columnCount; i++) {
-                    if (groupByExpression == null || !groupByExpression[i]) {
-                        Expression expr = expressions.get(i);
-                        expr.updateAggregate(session);
-                    }
-                }
-            }
+        LazyResultGroupSorted lazyResult = new LazyResultGroupSorted(expressionArray, columnCount);
+        if (result == null) {
+            return lazyResult;
         }
-        if (previousKeyValues != null) {
-            addGroupSortedRow(previousKeyValues, columnCount, result);
+        while (lazyResult.next()) {
+            result.addRow(lazyResult.currentRow());
         }
         return null;
     }
 
-    private void addGroupSortedRow(Value[] keyValues, int columnCount,
-            ResultTarget result) {
+    private Value[] createGroupSortedRow(Value[] keyValues, int columnCount) {
         Value[] row = new Value[columnCount];
         for (int j = 0; groupIndex != null && j < groupIndex.length; j++) {
             row[groupIndex[j]] = keyValues[j];
@@ -224,10 +192,10 @@ public class Select extends Query {
             row[j] = expr.getValue(session);
         }
         if (isHavingNullOrFalse(row)) {
-            return;
+            return null;
         }
         row = keepOnlyDistinct(row, columnCount);
-        result.addRow(row);
+        return row;
     }
 
     private Value[] keepOnlyDistinct(Value[] row, int columnCount) {
@@ -1479,8 +1447,15 @@ public class Select extends Query {
      */
     private final class LazyResultGroupSorted extends LazyResult {
 
-        LazyResultGroupSorted(Expression[] expressions) {
+        int rowNumber;
+        int columnCount;
+        Value[] previousKeyValues;
+
+        LazyResultGroupSorted(Expression[] expressions, int columnCount) {
             super(expressions);
+            this.columnCount = columnCount;
+            setCurrentRowNumber(0);
+            currentGroup = null;
         }
 
         @Override
@@ -1490,8 +1465,47 @@ public class Select extends Query {
 
         @Override
         protected Value[] fetchNextRow() {
-            // TODO Auto-generated method stub
-            return null;
+            while (topTableFilter.next()) {
+                setCurrentRowNumber(rowNumber + 1);
+                if (condition == null ||
+                        Boolean.TRUE.equals(condition.getBooleanValue(session))) {
+                    rowNumber++;
+                    Value[] keyValues = new Value[groupIndex.length];
+                    // update group
+                    for (int i = 0; i < groupIndex.length; i++) {
+                        int idx = groupIndex[i];
+                        Expression expr = expressions.get(idx);
+                        keyValues[i] = expr.getValue(session);
+                    }
+
+                    Value[] row = null;
+                    if (previousKeyValues == null) {
+                        previousKeyValues = keyValues;
+                        currentGroup = New.hashMap();
+                    } else if (!Arrays.equals(previousKeyValues, keyValues)) {
+                        row = createGroupSortedRow(previousKeyValues, columnCount);
+                        previousKeyValues = keyValues;
+                        currentGroup = New.hashMap();
+                    }
+                    currentGroupRowId++;
+
+                    for (int i = 0; i < columnCount; i++) {
+                        if (groupByExpression == null || !groupByExpression[i]) {
+                            Expression expr = expressions.get(i);
+                            expr.updateAggregate(session);
+                        }
+                    }
+                    if (row != null) {
+                        return row;
+                    }
+                }
+            }
+            Value[] row = null;
+            if (previousKeyValues != null) {
+                row = createGroupSortedRow(previousKeyValues, columnCount);
+                previousKeyValues = null;
+            }
+            return row;
         }
 
         @Override
