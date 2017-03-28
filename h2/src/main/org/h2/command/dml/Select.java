@@ -295,6 +295,11 @@ public class Select extends Query {
         return count;
     }
 
+    private boolean isConditionMet() {
+        return condition == null ||
+                Boolean.TRUE.equals(condition.getBooleanValue(session));
+    }
+
     private void queryGroup(int columnCount, LocalResult result) {
         ValueHashMap<HashMap<Expression, Object>> groups =
                 ValueHashMap.newInstance();
@@ -305,8 +310,7 @@ public class Select extends Query {
         int sampleSize = getSampleSizeValue(session);
         while (topTableFilter.next()) {
             setCurrentRowNumber(rowNumber + 1);
-            if (condition == null ||
-                    Boolean.TRUE.equals(condition.getBooleanValue(session))) {
+            if (isConditionMet()) {
                 Value key;
                 rowNumber++;
                 if (groupIndex == null) {
@@ -1438,8 +1442,7 @@ public class Select extends Query {
             while ((sampleSize <= 0 || rowNumber < sampleSize) &&
                     topTableFilter.next()) {
                 setCurrentRowNumber(++rowNumber);
-                if (condition == null ||
-                        Boolean.TRUE.equals(condition.getBooleanValue(session))) {
+                if (isConditionMet()) {
                     Value[] row = new Value[columnCount];
                     for (int i = 0; i < columnCount; i++) {
                         Expression expr = expressions.get(i);
@@ -1472,8 +1475,7 @@ public class Select extends Query {
         protected Value[] fetchNextRow() {
             while (topTableFilter.next()) {
                 setCurrentRowNumber(rowNumber + 1);
-                if (condition == null ||
-                        Boolean.TRUE.equals(condition.getBooleanValue(session))) {
+                if (isConditionMet()) {
                     rowNumber++;
                     Value[] keyValues = new Value[groupIndex.length];
                     // update group
