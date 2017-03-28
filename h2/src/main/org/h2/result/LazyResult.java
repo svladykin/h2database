@@ -23,7 +23,7 @@ public abstract class LazyResult implements ResultInterface {
     private Value[] nextRow;
     private boolean closed;
     private boolean afterLast;
-    private int limit = Integer.MAX_VALUE;
+    private int limit;
 
     public LazyResult(Expression[] expressions) {
         this.expressions = expressions;
@@ -60,9 +60,9 @@ public abstract class LazyResult implements ResultInterface {
             return true;
         }
         if (!afterLast) {
-            afterLast = true;
-            currentRow = null;
             rowId++;
+            currentRow = null;
+            afterLast = true;
         }
         return false;
     }
@@ -72,7 +72,7 @@ public abstract class LazyResult implements ResultInterface {
         if (closed || afterLast) {
             return false;
         }
-        if (nextRow == null && rowId + 1 < limit) {
+        if (nextRow == null && (limit <= 0 || rowId + 1 < limit)) {
             nextRow = fetchNextRow();
         }
         return nextRow != null;

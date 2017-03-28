@@ -534,34 +534,24 @@ public class Select extends Query {
                 limitRows += offset;
             }
         }
-        int rowNumber = 0;
-        setCurrentRowNumber(0);
         ArrayList<Row> forUpdateRows = null;
         if (isForUpdateMvcc) {
             forUpdateRows = New.arrayList();
         }
         int sampleSize = getSampleSizeValue(session);
-        while (topTableFilter.next()) {
-            setCurrentRowNumber(rowNumber + 1);
-            if (condition == null ||
-                    Boolean.TRUE.equals(condition.getBooleanValue(session))) {
-                Value[] row = new Value[columnCount];
-                for (int i = 0; i < columnCount; i++) {
-                    Expression expr = expressions.get(i);
-                    row[i] = expr.getValue(session);
-                }
-                if (isForUpdateMvcc) {
-                    topTableFilter.lockRowAdd(forUpdateRows);
-                }
-                result.addRow(row);
-                rowNumber++;
-                if ((sort == null || sortUsingIndex) && limitRows > 0 &&
-                        result.getRowCount() >= limitRows) {
-                    break;
-                }
-                if (sampleSize > 0 && rowNumber >= sampleSize) {
-                    break;
-                }
+        LazyResultQueryFlat lazyResult = new LazyResultQueryFlat(expressionArray,
+                sampleSize, columnCount);
+        if (result == null) {
+            return lazyResult;
+        }
+        while (lazyResult.next()) {
+            if (isForUpdateMvcc) {
+                topTableFilter.lockRowAdd(forUpdateRows);
+            }
+            result.addRow(lazyResult.currentRow());
+            if ((sort == null || sortUsingIndex) && limitRows > 0 &&
+                    result.getRowCount() >= limitRows) {
+                break;
             }
         }
         if (isForUpdateMvcc) {
@@ -645,7 +635,7 @@ public class Select extends Query {
         }
         topTableFilter.lock(session, exclusive, exclusive);
         ResultTarget to = result != null ? result : target;
-        lazy = to == null;
+        lazy &= to == null;
         LazyResult lazyResult = null;
         if (limitRows != 0) {
             try {
@@ -663,14 +653,17 @@ public class Select extends Query {
                     lazyResult = queryFlat(columnCount, to, limitRows);
                 }
             } finally {
-                JoinBatch jb = getJoinBatch();
-                if (jb != null && !lazy) {
-                    jb.reset(false);
+                if (!lazy) {
+                    JoinBatch jb = getJoinBatch();
+                    if (jb != null) {
+                        jb.reset(false);
+                    }
                 }
             }
         }
+        assert lazy == (lazyResult != null): lazy;
         if (lazyResult != null) {
-            if (limitRows >= 0) {
+            if (limitRows > 0) {
                 lazyResult.setLimit(limitRows);
             }
             return lazyResult;
@@ -1430,11 +1423,63 @@ public class Select extends Query {
     }
 
     /**
-     * Lazy execution for this SELECT.
+     * Lazy execution for a flat query.
      */
-    private final class LazyResultSelect extends LazyResult {
+    private final class LazyResultQueryFlat extends LazyResult {
 
-        LazyResultSelect(Expression[] expressions) {
+        int rowNumber;
+        int sampleSize;
+        int columnCount;
+
+        LazyResultQueryFlat(Expression[] expressions, int sampleSize, int columnCount) {
+            super(expressions);
+            this.sampleSize = sampleSize;
+            this.columnCount = columnCount;
+            setCurrentRowNumber(0);
+        }
+
+        @Override
+        public int getVisibleColumnCount() {
+            return visibleColumnCount;
+        }
+
+        @Override
+        protected Value[] fetchNextRow() {
+            while ((sampleSize <= 0 || rowNumber < sampleSize) &&
+                    topTableFilter.next()) {
+                setCurrentRowNumber(++rowNumber);
+                if (condition == null ||
+                        Boolean.TRUE.equals(condition.getBooleanValue(session))) {
+                    Value[] row = new Value[columnCount];
+                    for (int i = 0; i < columnCount; i++) {
+                        Expression expr = expressions.get(i);
+                        row[i] = expr.getValue(session);
+                    }
+                    return row;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public void close() {
+            super.close();
+            // TODO Auto-generated method stub
+        }
+
+        @Override
+        public void reset() {
+            super.reset();
+            // TODO Auto-generated method stub
+        }
+    }
+
+    /**
+     * Lazy execution for a group sorted query.
+     */
+    private final class LazyResultGroupSorted extends LazyResult {
+
+        LazyResultGroupSorted(Expression[] expressions) {
             super(expressions);
         }
 
