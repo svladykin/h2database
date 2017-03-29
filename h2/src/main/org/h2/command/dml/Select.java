@@ -626,10 +626,7 @@ public class Select extends Query {
                 }
             } finally {
                 if (!lazy) {
-                    JoinBatch jb = getJoinBatch();
-                    if (jb != null) {
-                        jb.reset(false);
-                    }
+                    resetJoinBatchAfterQuery();
                 }
             }
         }
@@ -658,6 +655,13 @@ public class Select extends Query {
             return result;
         }
         return null;
+    }
+
+    private void resetJoinBatchAfterQuery() {
+        JoinBatch jb = getJoinBatch();
+        if (jb != null) {
+            jb.reset(false);
+        }
     }
 
     private LocalResult createLocalResult(LocalResult old) {
@@ -1399,8 +1403,13 @@ public class Select extends Query {
      */
     private abstract class LazyResultSelect extends LazyResult {
 
-        LazyResultSelect(Expression[] expressions) {
+        int rowNumber;
+        int columnCount;
+
+        LazyResultSelect(Expression[] expressions, int columnCount) {
             super(expressions);
+            this.columnCount = columnCount;
+            setCurrentRowNumber(0);
         }
 
         @Override
@@ -1409,15 +1418,12 @@ public class Select extends Query {
         }
 
         @Override
-        public final void close() {
-            super.close();
-            // TODO Auto-generated method stub
-        }
-
-        @Override
-        public final void reset() {
+        public void reset() {
             super.reset();
-            // TODO Auto-generated method stub
+            resetJoinBatchAfterQuery();
+            topTableFilter.reset();
+            setCurrentRowNumber(0);
+            rowNumber = 0;
         }
     }
 
@@ -1426,15 +1432,11 @@ public class Select extends Query {
      */
     private final class LazyResultQueryFlat extends LazyResultSelect {
 
-        int rowNumber;
         int sampleSize;
-        int columnCount;
 
         LazyResultQueryFlat(Expression[] expressions, int sampleSize, int columnCount) {
-            super(expressions);
+            super(expressions, columnCount);
             this.sampleSize = sampleSize;
-            this.columnCount = columnCount;
-            setCurrentRowNumber(0);
         }
 
         @Override
@@ -1460,14 +1462,16 @@ public class Select extends Query {
      */
     private final class LazyResultGroupSorted extends LazyResultSelect {
 
-        int rowNumber;
-        int columnCount;
         Value[] previousKeyValues;
 
         LazyResultGroupSorted(Expression[] expressions, int columnCount) {
-            super(expressions);
-            this.columnCount = columnCount;
-            setCurrentRowNumber(0);
+            super(expressions, columnCount);
+            currentGroup = null;
+        }
+
+        @Override
+        public void reset() {
+            super.reset();
             currentGroup = null;
         }
 

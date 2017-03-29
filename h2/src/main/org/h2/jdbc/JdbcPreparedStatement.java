@@ -102,14 +102,16 @@ public class JdbcPreparedStatement extends JdbcStatement implements
             synchronized (session) {
                 checkClosed();
                 closeOldResultSet();
-                ResultInterface result;
+                ResultInterface result = null;
                 boolean scrollable = resultSetType != ResultSet.TYPE_FORWARD_ONLY;
                 boolean updatable = resultSetConcurrency == ResultSet.CONCUR_UPDATABLE;
                 try {
                     setExecutingStatement(command);
                     result = command.executeQuery(maxRows, scrollable);
                 } finally {
-                    setExecutingStatement(null);
+                    if (result == null || !result.isLazy()) {
+                        setExecutingStatement(null);
+                    }
                 }
                 resultSet = new JdbcResultSet(conn, this, result, id,
                         closedByResultSet, scrollable, updatable, cachedColumnLabelMap);
@@ -186,6 +188,7 @@ public class JdbcPreparedStatement extends JdbcStatement implements
                 boolean returnsResultSet;
                 synchronized (conn.getSession()) {
                     closeOldResultSet();
+                    boolean lazy = false;
                     try {
                         setExecutingStatement(command);
                         if (command.isQuery()) {
@@ -193,6 +196,7 @@ public class JdbcPreparedStatement extends JdbcStatement implements
                             boolean scrollable = resultSetType != ResultSet.TYPE_FORWARD_ONLY;
                             boolean updatable = resultSetConcurrency == ResultSet.CONCUR_UPDATABLE;
                             ResultInterface result = command.executeQuery(maxRows, scrollable);
+                            lazy = result.isLazy();
                             resultSet = new JdbcResultSet(conn, this, result,
                                     id, closedByResultSet, scrollable,
                                     updatable);
@@ -201,7 +205,9 @@ public class JdbcPreparedStatement extends JdbcStatement implements
                             updateCount = command.executeUpdate();
                         }
                     } finally {
-                        setExecutingStatement(null);
+                        if (!lazy) {
+                            setExecutingStatement(null);
+                        }
                     }
                 }
                 return returnsResultSet;

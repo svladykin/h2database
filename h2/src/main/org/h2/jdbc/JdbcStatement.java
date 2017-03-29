@@ -71,14 +71,16 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
                 closeOldResultSet();
                 sql = JdbcConnection.translateSQL(sql, escapeProcessing);
                 CommandInterface command = conn.prepareCommand(sql, fetchSize);
-                ResultInterface result;
+                ResultInterface result = null;
                 boolean scrollable = resultSetType != ResultSet.TYPE_FORWARD_ONLY;
                 boolean updatable = resultSetConcurrency == ResultSet.CONCUR_UPDATABLE;
                 setExecutingStatement(command);
                 try {
                     result = command.executeQuery(maxRows, scrollable);
                 } finally {
-                    setExecutingStatement(null);
+                    if (result == null || !result.isLazy()) {
+                        setExecutingStatement(null);
+                    }
                 }
                 command.close();
                 resultSet = new JdbcResultSet(conn, this, result, id,
@@ -170,6 +172,7 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
             CommandInterface command = conn.prepareCommand(sql, fetchSize);
             boolean returnsResultSet;
             synchronized (session) {
+                boolean lazy = false;
                 setExecutingStatement(command);
                 try {
                     if (command.isQuery()) {
@@ -177,6 +180,7 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
                         boolean scrollable = resultSetType != ResultSet.TYPE_FORWARD_ONLY;
                         boolean updatable = resultSetConcurrency == ResultSet.CONCUR_UPDATABLE;
                         ResultInterface result = command.executeQuery(maxRows, scrollable);
+                        lazy = result.isLazy();
                         resultSet = new JdbcResultSet(conn, this, result, id,
                                 closedByResultSet, scrollable, updatable);
                     } else {
@@ -184,7 +188,9 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
                         updateCount = command.executeUpdate();
                     }
                 } finally {
-                    setExecutingStatement(null);
+                    if (!lazy) {
+                        setExecutingStatement(null);
+                    }
                 }
             }
             command.close();

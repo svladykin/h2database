@@ -208,6 +208,9 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
     void closeInternal() throws SQLException {
         if (result != null) {
             try {
+                if (result.isLazy()) {
+                    stat.setExecutingStatement(null);
+                }
                 result.close();
                 if (closeStatement && stat != null) {
                     stat.close();

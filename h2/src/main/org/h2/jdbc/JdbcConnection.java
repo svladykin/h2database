@@ -1537,6 +1537,7 @@ public class JdbcConnection extends TraceObject implements Connection,
      * INTERNAL
      */
     public void setExecutingStatement(Statement stat) {
+        assert executingStatement == null || stat == null;
         executingStatement = stat;
     }
 
