@@ -561,9 +561,9 @@ public class Select extends Query {
                 limitRows = Math.min(l, limitRows);
             }
         }
-        boolean lazy = session.isLazyQueryExecution() && target == null &&
-                !isForUpdate && !isQuickAggregateQuery && limitRows != 0 &&
-                offsetExpr == null;
+        boolean lazy = !neverLazy && session.isLazyQueryExecution() &&
+                target == null && !isForUpdate && !isQuickAggregateQuery &&
+                limitRows != 0 && offsetExpr == null;
         int columnCount = expressions.size();
         LocalResult result = null;
         if (!lazy && (target == null ||
@@ -1415,6 +1415,14 @@ public class Select extends Query {
         @Override
         public final int getVisibleColumnCount() {
             return visibleColumnCount;
+        }
+
+        @Override
+        public void close() {
+            if (!isClosed()) {
+                super.close();
+                resetJoinBatchAfterQuery();
+            }
         }
 
         @Override

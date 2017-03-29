@@ -60,6 +60,8 @@ public abstract class Query extends Prepared {
      */
     protected boolean randomAccessResult;
 
+    protected boolean neverLazy;
+
     private boolean noCache;
     private int lastLimit;
     private long lastEvaluated;
@@ -69,6 +71,10 @@ public abstract class Query extends Prepared {
 
     Query(Session session) {
         super(session);
+    }
+
+    public void setNeverLazy(boolean b) {
+        this.neverLazy = b;
     }
 
     /**
