@@ -72,6 +72,13 @@ public class SelectUnion extends Query {
     }
 
     @Override
+    public void setNeverLazy(boolean b) {
+        super.setNeverLazy(b);
+        left.setNeverLazy(b);
+        right.setNeverLazy(b);
+    }
+
+    @Override
     public boolean isUnion() {
         return true;
     }
