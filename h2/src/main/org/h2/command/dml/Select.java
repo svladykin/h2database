@@ -561,7 +561,7 @@ public class Select extends Query {
                 limitRows = Math.min(l, limitRows);
             }
         }
-        boolean lazy = !neverLazy && session.isLazyQueryExecution() &&
+        boolean lazy = session.isLazyQueryExecution() && !neverLazy &&
                 target == null && !isForUpdate && !isQuickAggregateQuery &&
                 limitRows != 0 && offsetExpr == null;
         int columnCount = expressions.size();

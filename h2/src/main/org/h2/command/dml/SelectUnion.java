@@ -17,6 +17,7 @@ import org.h2.expression.ExpressionVisitor;
 import org.h2.expression.Parameter;
 import org.h2.expression.ValueExpression;
 import org.h2.message.DbException;
+import org.h2.result.LazyResult;
 import org.h2.result.LocalResult;
 import org.h2.result.ResultInterface;
 import org.h2.result.ResultTarget;
@@ -184,6 +185,21 @@ public class SelectUnion extends Query {
             }
         }
         int columnCount = left.getColumnCount();
+        if (session.isLazyQueryExecution() && !neverLazy &&
+                unionType == UNION_ALL && !distinct &&
+                sort == null && !randomAccessResult &&
+                !isForUpdate && offsetExpr == null) {
+            ResultInterface l = left.query(0);
+            ResultInterface r = right.query(0);
+            LazyResultUnion lazyResult = new LazyResultUnion(expressionArray, columnCount, l, r);
+            if (limitExpr != null) {
+                Value v = limitExpr.getValue(session);
+                if (v != ValueNull.INSTANCE) {
+                    lazyResult.setLimit(v.getInt());
+                }
+            }
+            return lazyResult;
+        }
         LocalResult result = new LocalResult(session, expressionArray, columnCount);
         if (sort != null) {
             result.setSortOrder(sort);
@@ -480,4 +496,62 @@ public class SelectUnion extends Query {
         return left.allowGlobalConditions() && right.allowGlobalConditions();
     }
 
+    /**
+     * Lazy execution for this union.
+     */
+    private static final class LazyResultUnion extends LazyResult {
+
+        int columnCount;
+        ResultInterface left;
+        ResultInterface right;
+        boolean leftDone;
+        boolean rightDone;
+
+        LazyResultUnion(Expression[] expressions, int columnCount,
+                ResultInterface left, ResultInterface right) {
+            super(expressions);
+            this.columnCount = columnCount;
+            this.left = left;
+            this.right = right;
+        }
+
+        @Override
+        public int getVisibleColumnCount() {
+            return columnCount;
+        }
+
+        @Override
+        protected Value[] fetchNextRow() {
+            if (rightDone) {
+                return null;
+            }
+            if (!leftDone) {
+                if (left.next()) {
+                    return left.currentRow();
+                }
+                leftDone = true;
+            }
+            if (right.next()) {
+                return right.currentRow();
+            }
+            rightDone = true;
+            return null;
+        }
+
+        @Override
+        public void close() {
+            super.close();
+            left.close();
+            right.close();
+        }
+
+        @Override
+        public void reset() {
+            super.reset();
+            left.reset();
+            right.reset();
+            leftDone = false;
+            rightDone = false;
+        }
+    }
 }
