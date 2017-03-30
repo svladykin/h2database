@@ -182,16 +182,21 @@ public class SelectUnion extends Query {
                 unionType == UNION_ALL && !distinct &&
                 sort == null && !randomAccessResult &&
                 !isForUpdate && offsetExpr == null) {
-            ResultInterface l = left.query(0);
-            ResultInterface r = right.query(0);
-            LazyResultUnion lazyResult = new LazyResultUnion(expressionArray, columnCount, l, r);
+            int limit = -1;
             if (limitExpr != null) {
                 Value v = limitExpr.getValue(session);
                 if (v != ValueNull.INSTANCE) {
-                    lazyResult.setLimit(v.getInt());
+                    limit = v.getInt();
                 }
             }
-            return lazyResult;
+            // limit 0 means no rows
+            if (limit != 0) {
+                LazyResultUnion lazyResult = new LazyResultUnion(expressionArray, columnCount);
+                if (limit > 0) {
+                    lazyResult.setLimit(limit);
+                }
+                return lazyResult;
+            }
         }
         LocalResult result = new LocalResult(session, expressionArray, columnCount);
         if (sort != null) {
@@ -492,20 +497,17 @@ public class SelectUnion extends Query {
     /**
      * Lazy execution for this union.
      */
-    private static final class LazyResultUnion extends LazyResult {
+    private final class LazyResultUnion extends LazyResult {
 
         int columnCount;
-        ResultInterface left;
-        ResultInterface right;
+        ResultInterface l;
+        ResultInterface r;
         boolean leftDone;
         boolean rightDone;
 
-        LazyResultUnion(Expression[] expressions, int columnCount,
-                ResultInterface left, ResultInterface right) {
+        LazyResultUnion(Expression[] expressions, int columnCount) {
             super(expressions);
             this.columnCount = columnCount;
-            this.left = left;
-            this.right = right;
         }
 
         @Override
@@ -519,13 +521,19 @@ public class SelectUnion extends Query {
                 return null;
             }
             if (!leftDone) {
-                if (left.next()) {
-                    return left.currentRow();
+                if (l == null) {
+                    l = left.query(0);
+                }
+                if (l.next()) {
+                    return l.currentRow();
                 }
                 leftDone = true;
             }
-            if (right.next()) {
-                return right.currentRow();
+            if (r == null) {
+                r = right.query(0);
+            }
+            if (r.next()) {
+                return r.currentRow();
             }
             rightDone = true;
             return null;
@@ -534,15 +542,23 @@ public class SelectUnion extends Query {
         @Override
         public void close() {
             super.close();
-            left.close();
-            right.close();
+            if (l != null) {
+                l.close();
+            }
+            if (r != null) {
+                r.close();
+            }
         }
 
         @Override
         public void reset() {
             super.reset();
-            left.reset();
-            right.reset();
+            if (l != null) {
+                l.reset();
+            }
+            if (r != null) {
+                r.reset();
+            }
             leftDone = false;
             rightDone = false;
         }

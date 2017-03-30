@@ -269,6 +269,9 @@ public class TestUpdatableResultSet extends TestBase {
         if (!config.lazy) {
             assertTrue(rs.absolute(-1));
             assertEquals(3, rs.getRow());
+
+            assertTrue(rs.absolute(-2));
+            assertEquals(2, rs.getRow());
         }
 
         assertFalse(rs.absolute(4));
