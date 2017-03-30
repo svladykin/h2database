@@ -1059,7 +1059,13 @@ public abstract class TestBase {
     protected void assertThrows(int expectedErrorCode, Statement stat,
             String sql) {
         try {
-            stat.execute(sql);
+            if (stat.execute(sql) && config.lazy) {
+                try (ResultSet rs = stat.getResultSet()) {
+                    while (rs.next()) {
+                        // just loop
+                    }
+                }
+            }
             fail("Expected error: " + expectedErrorCode);
         } catch (SQLException ex) {
             assertEquals(expectedErrorCode, ex.getErrorCode());
@@ -1500,8 +1506,9 @@ public abstract class TestBase {
                     AssertionError ae = new AssertionError(
                             "Expected an SQLException or DbException with error code "
                                     + expectedErrorCode
-                                    + ", but got a " + t.getClass().getName() + " exception "
-                                    + " with error code " + errorCode);
+                                    + ", but got a " + (t == null ? "null" :
+                                            t.getClass().getName() + " exception "
+                                    + " with error code " + errorCode));
                     ae.initCause(t);
                     throw ae;
                 }

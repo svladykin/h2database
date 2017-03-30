@@ -73,13 +73,6 @@ public class SelectUnion extends Query {
     }
 
     @Override
-    public void setNeverLazy(boolean b) {
-        super.setNeverLazy(b);
-        left.setNeverLazy(b);
-        right.setNeverLazy(b);
-    }
-
-    @Override
     public boolean isUnion() {
         return true;
     }
@@ -185,7 +178,7 @@ public class SelectUnion extends Query {
             }
         }
         int columnCount = left.getColumnCount();
-        if (session.isLazyQueryExecution() && !neverLazy &&
+        if (session.isLazyQueryExecution() &&
                 unionType == UNION_ALL && !distinct &&
                 sort == null && !randomAccessResult &&
                 !isForUpdate && offsetExpr == null) {
@@ -461,7 +454,7 @@ public class SelectUnion extends Query {
     public ResultInterface query(int limit, ResultTarget target) {
         // union doesn't always know the parameter list of the left and right
         // queries
-        return queryWithoutCache(limit, target);
+        return queryWithoutCache0(limit, target);
     }
 
     @Override

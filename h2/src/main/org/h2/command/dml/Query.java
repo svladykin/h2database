@@ -101,6 +101,21 @@ public abstract class Query extends Prepared {
     protected abstract ResultInterface queryWithoutCache(int limit,
             ResultTarget target);
 
+    protected final ResultInterface queryWithoutCache0(int limit,
+            ResultTarget target) {
+        boolean disableLazy = neverLazy && session.isLazyQueryExecution();
+        if (disableLazy) {
+            session.setLazyQueryExecution(false);
+        }
+        try {
+            return queryWithoutCache(limit, target);
+        } finally {
+            if (disableLazy) {
+                session.setLazyQueryExecution(true);
+            }
+        }
+    }
+
     /**
      * Initialize the query.
      */
@@ -326,7 +341,7 @@ public abstract class Query extends Prepared {
         fireBeforeSelectTriggers();
         if (noCache || !session.getDatabase().getOptimizeReuseResults() ||
                 session.isLazyQueryExecution()) {
-            return queryWithoutCache(limit, target);
+            return queryWithoutCache0(limit, target);
         }
         Value[] params = getParameterValues();
         long now = session.getDatabase().getModificationDataId();
@@ -345,7 +360,7 @@ public abstract class Query extends Prepared {
         }
         lastParameters = params;
         closeLastResult();
-        ResultInterface r = queryWithoutCache(limit, target);
+        ResultInterface r = queryWithoutCache0(limit, target);
         lastResult = r;
         this.lastEvaluated = now;
         lastLimit = limit;

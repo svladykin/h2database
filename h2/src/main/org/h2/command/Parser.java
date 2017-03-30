@@ -223,6 +223,7 @@ public class Parser {
     private ArrayList<Parameter> indexedParameterList;
     private int orderInFrom;
     private ArrayList<Parameter> suppliedParameterList;
+    private boolean hasRecursive;
 
     public Parser(Session session) {
         this.database = session.getDatabase();
@@ -299,6 +300,9 @@ public class Parser {
         }
         p.setPrepareAlways(recompileAlways);
         p.setParameterList(parameters);
+        if (hasRecursive && p.isQuery() && p instanceof Query) {
+            ((Query) p).setNeverLazy(true);
+        }
         return p;
     }
 
@@ -4806,6 +4810,7 @@ public class Parser {
     }
 
     private Query parseWith() {
+        hasRecursive = true;
         readIf("RECURSIVE");
         String tempViewName = readIdentifierWithSchema();
         Schema schema = getSchema();

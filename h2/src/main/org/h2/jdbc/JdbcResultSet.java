@@ -2809,7 +2809,13 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         try {
             debugCodeCall("last");
             checkClosed();
-            return absolute(-1);
+            if (result.isAfterLast()) {
+                resetResult();
+            }
+            while (result.hasNext()) {
+                nextRow();
+            }
+            return isOnValidRow();
         } catch (Exception e) {
             throw logAndConvert(e);
         }
@@ -3257,6 +3263,9 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
     }
 
     private boolean nextRow() {
+        if (result.isLazy() && stat.isCancelled()) {
+            throw DbException.get(ErrorCode.STATEMENT_WAS_CANCELED);
+        }
         boolean next = result.next();
         if (!next && !scrollable) {
             result.close();

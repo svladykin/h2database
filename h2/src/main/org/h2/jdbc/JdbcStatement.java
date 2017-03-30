@@ -38,7 +38,7 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
     private int lastExecutedCommandType;
     private ArrayList<String> batchCommands;
     private boolean escapeProcessing = true;
-    private boolean cancelled;
+    private volatile boolean cancelled;
 
     JdbcStatement(JdbcConnection conn, int id, int resultSetType,
             int resultSetConcurrency, boolean closeWithResultSet) {
@@ -555,7 +555,7 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
      *
      * @return true if yes
      */
-    public boolean wasCancelled() {
+    public boolean isCancelled() {
         return cancelled;
     }
 
