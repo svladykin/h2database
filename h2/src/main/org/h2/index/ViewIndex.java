@@ -192,6 +192,7 @@ public class ViewIndex extends BaseIndex implements SpatialIndex {
             parser.setRightsChecked(true);
             parser.setSuppliedParameterList(originalParameters);
             query = (Query) parser.prepare(querySQL);
+            query.setNeverLazy(true);
         }
         if (!query.isUnion()) {
             throw DbException.get(ErrorCode.SYNTAX_ERROR_2,

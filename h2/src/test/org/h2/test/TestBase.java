@@ -318,6 +318,9 @@ public abstract class TestBase {
         if (config.multiThreaded) {
             url = addOption(url, "MULTI_THREADED", "TRUE");
         }
+        if (config.lazy) {
+            url = addOption(url, "LAZY_QUERY_EXECUTION", "1");
+        }
         if (config.cacheType != null && admin) {
             url = addOption(url, "CACHE_TYPE", config.cacheType);
         }
