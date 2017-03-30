@@ -613,7 +613,6 @@ kill -9 `jps -l | grep "org.h2.test." | cut -d " " -f 1`
         memory = true;
         multiThreaded = true;
         test();
-        testUnit();
         lazy = false;
 
         // but sometimes race conditions need bigger windows
