@@ -22,6 +22,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -1059,16 +1060,27 @@ public abstract class TestBase {
     protected void assertThrows(int expectedErrorCode, Statement stat,
             String sql) {
         try {
-            if (stat.execute(sql) && config.lazy) {
-                try (ResultSet rs = stat.getResultSet()) {
-                    while (rs.next()) {
-                        // just loop
-                    }
-                }
-            }
+            execute(stat, sql);
             fail("Expected error: " + expectedErrorCode);
         } catch (SQLException ex) {
             assertEquals(expectedErrorCode, ex.getErrorCode());
+        }
+    }
+
+    protected void execute(PreparedStatement stat) throws SQLException {
+        execute(stat, null);
+    }
+
+    protected void execute(Statement stat, String sql) throws SQLException {
+        boolean query = sql == null ? ((PreparedStatement) stat).execute() :
+            stat.execute(sql);
+
+        if (query && config.lazy) {
+            try (ResultSet rs = stat.getResultSet()) {
+                while (rs.next()) {
+                    // just loop
+                }
+            }
         }
     }
 

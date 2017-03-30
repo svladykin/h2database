@@ -214,7 +214,7 @@ public class SetTypes {
     public static final int RETENTION_TIME = 40;
 
     /**
-     * The type of a SET QUERY_STATISTICS_ACTIVE statement.
+     * The type of a SET QUERY_STATISTICS statement.
      */
     public static final int QUERY_STATISTICS = 41;
 
