@@ -113,7 +113,7 @@ public class JdbcPreparedStatement extends JdbcStatement implements
                         setExecutingStatement(null);
                     }
                 }
-                resultSet = new JdbcResultSet(conn, this, result, id,
+                resultSet = new JdbcResultSet(conn, this, command, result, id,
                         closedByResultSet, scrollable, updatable, cachedColumnLabelMap);
             }
             return resultSet;
@@ -197,9 +197,9 @@ public class JdbcPreparedStatement extends JdbcStatement implements
                             boolean updatable = resultSetConcurrency == ResultSet.CONCUR_UPDATABLE;
                             ResultInterface result = command.executeQuery(maxRows, scrollable);
                             lazy = result.isLazy();
-                            resultSet = new JdbcResultSet(conn, this, result,
+                            resultSet = new JdbcResultSet(conn, this, command, result,
                                     id, closedByResultSet, scrollable,
-                                    updatable);
+                                    updatable, cachedColumnLabelMap);
                         } else {
                             returnsResultSet = false;
                             updateCount = command.executeUpdate();

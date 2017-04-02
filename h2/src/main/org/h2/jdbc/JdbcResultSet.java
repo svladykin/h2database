@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import org.h2.api.ErrorCode;
 import org.h2.api.TimestampWithTimeZone;
+import org.h2.command.CommandInterface;
 import org.h2.engine.SysProperties;
 import org.h2.message.DbException;
 import org.h2.message.TraceObject;
@@ -91,13 +92,15 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
     private HashMap<String, Integer> columnLabelMap;
     private HashMap<Integer, Value[]> patchedRows;
     private JdbcPreparedStatement preparedStatement;
+    private CommandInterface command;
 
-    JdbcResultSet(JdbcConnection conn, JdbcStatement stat,
+    JdbcResultSet(JdbcConnection conn, JdbcStatement stat, CommandInterface command,
             ResultInterface result, int id, boolean closeStatement,
             boolean scrollable, boolean updatable) {
         setTrace(conn.getSession().getTrace(), TraceObject.RESULT_SET, id);
         this.conn = conn;
         this.stat = stat;
+        this.command = command;
         this.result = result;
         columnCount = result.getVisibleColumnCount();
         this.closeStatement = closeStatement;
@@ -106,10 +109,10 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
     }
 
     JdbcResultSet(JdbcConnection conn, JdbcPreparedStatement preparedStatement,
-            ResultInterface result, int id, boolean closeStatement,
+            CommandInterface command, ResultInterface result, int id, boolean closeStatement,
             boolean scrollable, boolean updatable,
             HashMap<String, Integer> columnLabelMap) {
-        this(conn, preparedStatement, result, id, closeStatement, scrollable,
+        this(conn, preparedStatement, command, result, id, closeStatement, scrollable,
                 updatable);
         this.columnLabelMap = columnLabelMap;
         this.preparedStatement = preparedStatement;
@@ -209,7 +212,7 @@ public class JdbcResultSet extends TraceObject implements ResultSet, JdbcResultS
         if (result != null) {
             try {
                 if (result.isLazy()) {
-                    stat.setExecutingStatement(null);
+                    stat.onLazyResultSetClose(command, preparedStatement != null);
                 }
                 result.close();
                 if (closeStatement && stat != null) {

@@ -12,6 +12,7 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import org.h2.api.ErrorCode;
+import org.h2.command.Command;
 import org.h2.command.CommandInterface;
 import org.h2.engine.SessionInterface;
 import org.h2.engine.SysProperties;
@@ -82,8 +83,10 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
                         setExecutingStatement(null);
                     }
                 }
-                command.close();
-                resultSet = new JdbcResultSet(conn, this, result, id,
+                if (!result.isLazy()) {
+                    command.close();
+                }
+                resultSet = new JdbcResultSet(conn, this, command, result, id,
                         closedByResultSet, scrollable, updatable);
             }
             return resultSet;
@@ -170,9 +173,9 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
             closeOldResultSet();
             sql = JdbcConnection.translateSQL(sql, escapeProcessing);
             CommandInterface command = conn.prepareCommand(sql, fetchSize);
+            boolean lazy = false;
             boolean returnsResultSet;
             synchronized (session) {
-                boolean lazy = false;
                 setExecutingStatement(command);
                 try {
                     if (command.isQuery()) {
@@ -181,7 +184,7 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
                         boolean updatable = resultSetConcurrency == ResultSet.CONCUR_UPDATABLE;
                         ResultInterface result = command.executeQuery(maxRows, scrollable);
                         lazy = result.isLazy();
-                        resultSet = new JdbcResultSet(conn, this, result, id,
+                        resultSet = new JdbcResultSet(conn, this, command, result, id,
                                 closedByResultSet, scrollable, updatable);
                     } else {
                         returnsResultSet = false;
@@ -193,7 +196,9 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
                     }
                 }
             }
-            command.close();
+            if (!lazy) {
+                command.close();
+            }
             return returnsResultSet;
         } finally {
             afterWriting();
@@ -1035,6 +1040,14 @@ public class JdbcStatement extends TraceObject implements Statement, JdbcStateme
             lastExecutedCommandType = c.getCommandType();
         }
         executingCommand = c;
+    }
+
+    void onLazyResultSetClose(CommandInterface command, boolean preparedStatement) {
+        setExecutingStatement(null);
+        command.stop();
+        if (!preparedStatement) {
+            command.close();
+        }
     }
 
     /**

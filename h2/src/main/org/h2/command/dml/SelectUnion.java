@@ -178,10 +178,9 @@ public class SelectUnion extends Query {
             }
         }
         int columnCount = left.getColumnCount();
-        if (session.isLazyQueryExecution() &&
-                unionType == UNION_ALL && !distinct &&
-                sort == null && !randomAccessResult &&
-                !isForUpdate && offsetExpr == null) {
+        if (session.isLazyQueryExecution() && unionType == UNION_ALL && !distinct &&
+                sort == null && !randomAccessResult && !isForUpdate &&
+                offsetExpr == null && isReadOnly()) {
             int limit = -1;
             if (limitExpr != null) {
                 Value v = limitExpr.getValue(session);
@@ -523,6 +522,7 @@ public class SelectUnion extends Query {
             if (!leftDone) {
                 if (l == null) {
                     l = left.query(0);
+                    l.reset();
                 }
                 if (l.next()) {
                     return l.currentRow();
@@ -531,6 +531,7 @@ public class SelectUnion extends Query {
             }
             if (r == null) {
                 r = right.query(0);
+                r.reset();
             }
             if (r.next()) {
                 return r.currentRow();
