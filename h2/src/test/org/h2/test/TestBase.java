@@ -118,6 +118,8 @@ public abstract class TestBase {
      * @return itself
      */
     public TestBase init(TestAll conf) throws Exception {
+        conf.memory = true;
+        conf.lazy = true;
         baseDir = getTestDir("");
         FileUtils.createDirectories(baseDir);
         System.setProperty("java.io.tmpdir", TEMP_DIR);
