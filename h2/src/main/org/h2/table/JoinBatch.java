@@ -182,7 +182,6 @@ public final class JoinBatch {
     }
 
     private void start() {
-        System.out.println(" ---> start");
         // initialize current row
         current = new JoinRow(new Object[filters.length]);
         // initialize top cursor
