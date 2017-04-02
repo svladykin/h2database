@@ -852,12 +852,13 @@ public final class JoinBatch {
     }
 
     /**
-     * Lazy query runner base.
+     * Lazy query runner base for subqueries and views.
      */
     private abstract static class QueryRunnerBase extends LazyFuture<Cursor> {
         protected final ViewIndex viewIndex;
         protected SearchRow first;
         protected SearchRow last;
+        private boolean isLazyResult;
 
         QueryRunnerBase(ViewIndex viewIndex) {
             this.viewIndex = viewIndex;
@@ -869,6 +870,9 @@ public final class JoinBatch {
 
         @Override
         public final boolean reset() {
+            if (isLazyResult) {
+                resetViewTopFutureCursorAfterQuery();
+            }
             if (super.reset()) {
                 return true;
             }
@@ -878,10 +882,13 @@ public final class JoinBatch {
         }
 
         protected final ViewCursor newCursor(ResultInterface localResult) {
+            isLazyResult = localResult.isLazy();
             ViewCursor cursor = new ViewCursor(viewIndex, localResult, first, last);
             clear();
             return cursor;
         }
+
+        protected abstract void resetViewTopFutureCursorAfterQuery();
     }
 
     /**
@@ -926,7 +933,7 @@ public final class JoinBatch {
     }
 
     /**
-     * Query runner.
+     * Query runner for SELECT.
      */
     private final class QueryRunner extends QueryRunnerBase {
         Future<Cursor> topFutureCursor;
@@ -950,13 +957,20 @@ public final class JoinBatch {
             }
             viewIndex.setupQueryParameters(viewIndex.getSession(), first, last, null);
             JoinBatch.this.viewTopFutureCursor = topFutureCursor;
-            ResultInterface localResult;
+            ResultInterface localResult = null;
             try {
                 localResult = viewIndex.getQuery().query(0);
             } finally {
-                JoinBatch.this.viewTopFutureCursor = null;
+                if (localResult == null || !localResult.isLazy()) {
+                    resetViewTopFutureCursorAfterQuery();
+                }
             }
             return newCursor(localResult);
+        }
+
+        @Override
+        protected void resetViewTopFutureCursorAfterQuery() {
+            JoinBatch.this.viewTopFutureCursor = null;
         }
     }
 
@@ -1080,15 +1094,26 @@ public final class JoinBatch {
                 assert topFutureCursors[i] != null;
                 joinBatches.get(i).viewTopFutureCursor = topFutureCursors[i];
             }
-            ResultInterface localResult;
+            ResultInterface localResult = null;
             try {
                 localResult = viewIndex.getQuery().query(0);
             } finally {
-                for (int i = 0, size = joinBatches.size(); i < size; i++) {
-                    joinBatches.get(i).viewTopFutureCursor = null;
+                if (localResult == null || !localResult.isLazy()) {
+                    resetViewTopFutureCursorAfterQuery();
                 }
             }
             return newCursor(localResult);
+        }
+
+        @Override
+        protected void resetViewTopFutureCursorAfterQuery() {
+            ArrayList<JoinBatch> joinBatches = batchUnion.joinBatches;
+            if (joinBatches == null) {
+                return;
+            }
+            for (int i = 0, size = joinBatches.size(); i < size; i++) {
+                joinBatches.get(i).viewTopFutureCursor = null;
+            }
         }
     }
 }
